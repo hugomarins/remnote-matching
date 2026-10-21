@@ -10,7 +10,7 @@ import {
   SORTING_WIDGET,
 } from '../lib/consts';
 import { CSS, CSS_ID } from '../lib/css';
-import { makeMatching, separateMatching } from '../lib/matching';
+import { makeMatching, migrateMatchingCards, separateMatching } from '../lib/matching';
 import { makeSorting, separateSorting } from '../lib/sorting';
 
 async function onActivate(plugin: ReactRNPlugin) {
@@ -84,6 +84,12 @@ async function onActivate(plugin: ReactRNPlugin) {
   });
 
   registerBridge(plugin);
+
+  // Matching cards made as Multi-Line cards (first version) become forward cards.
+  void migrateMatchingCards(plugin).then(
+    (n) => n && console.log(`[Matching Cards] ${n} Matching card(s) migrated from Multi-Line`),
+    (e) => console.warn('[Matching Cards] migration failed', e)
+  );
 }
 
 async function onDeactivate(_: ReactRNPlugin) {}

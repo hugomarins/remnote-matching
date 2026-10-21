@@ -5,13 +5,13 @@ Two exercise types for RemNote flashcards, both written as ordinary rems (`left 
 ## Matching: one card, one schedule
 
 ```
-Atenção especial deve ser dada aos seguintes aspectos:   ← Matching
+Atenção especial deve ser dada aos seguintes aspectos: → ⇄   ← Matching
     Ondas :: causam movimentos no navio…
     Gelos :: podem afetar a manobrabilidade…
     …
 ```
 
-In the queue the card is drawn as Articulate Rise draws its matching exercise: the right column stays put, one row each, and the left items are puzzle pieces you drag onto a row, where they snap to the right piece (swapping with the item that was there). Tapping a piece and then a row does the same. **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card (rate it with RemNote's own buttons) and names the rating it suggests: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (a Multi-Line card whose answer lines are the pairs), so it is scheduled as one.
+In the queue the card is drawn as Articulate Rise draws its matching exercise: the right column stays put, one row each, and the left items are puzzle pieces you drag onto a row, where they snap to the right piece (swapping with the item that was there). Tapping a piece and then a row does the same. **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card (rate it with RemNote's own buttons) and names the rating it suggests: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (the prompt's forward card; its back side `⇄` is only a marker), so it is scheduled as one and rated with RemNote's usual buttons.
 
 To make one: write the prompt, its children as `left :: right`, put the cursor in the prompt and run **Make Matching card**. The pairs' own cards are switched off (practice direction "none").
 

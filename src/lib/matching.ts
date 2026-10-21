@@ -4,16 +4,20 @@ import { makeSorting } from './sorting';
 
 /**
  * A Matching card is an ordinary rem tree, so it stays readable and editable
- * in the editor and degrades to a plain card without this plugin:
+ * in the editor:
  *
- *   Prompt                      ← Matching powerup + Multi-Line card: ONE card, one schedule
- *     Left 1 :: Right 1         ← Card Item (an answer line), practice direction "none"
+ *   Prompt → ⇄                  ← Matching powerup + forward card: ONE card, one schedule
+ *     Left 1 :: Right 1         ← practice direction "none"
  *     Left 2 :: Right 2
  *
  * The queue widget (widgets/matching_queue.tsx) draws the exercise over that
- * card. Without the plugin (or before it loads) RemNote shows the prompt and,
- * on reveal, the pairs: still a valid card.
+ * card. The back side is only a marker that gives the prompt its single card.
+ *
+ * Not a Multi-Line card (the first version, 2026-10-21): RemNote grades a
+ * Multi-Line card line by line in its own answer view, which the widget
+ * covers, and until each line is marked it offers only "Forgot".
  */
+export const MATCHING_BACK = '⇄';
 
 export interface Pair {
   remId: string;
@@ -47,19 +51,46 @@ export async function makeMatching(rem: PluginRem): Promise<number> {
   if (pairs.length < MIN_PAIRS) {
     throw new Error(`a Matching card needs at least ${MIN_PAIRS} children written as "left :: right" (found ${pairs.length})`);
   }
-  if (hasText(rem.backText)) throw new Error('the prompt has a back side of its own; remove it first');
+  if (hasText(rem.backText) && !isMarker(rem.backText)) {
+    throw new Error('the prompt has a back side of its own; remove it first');
+  }
   const isPair = new Set(pairs.map((p) => p.remId));
   for (const child of await rem.getChildrenRem()) {
     if (!isPair.has(child._id)) continue;
     await child.setPracticeDirection('none');
-    await child.setIsCardItem(true);
+    // Card Items of the first (Multi-Line) version are plain children again.
+    await child.setIsCardItem(false);
   }
-  await rem.addPowerup(BuiltInPowerupCodes.MultiLineCard);
+  await rem.removePowerup(BuiltInPowerupCodes.MultiLineCard);
+  await rem.setBackText([MATCHING_BACK]);
+  await rem.setPracticeDirection('forward');
   await rem.addPowerup(MATCHING_POWERUP);
   return pairs.length;
 }
 
-/** Undoes makeMatching: each pair is a forward card again. */
+const isMarker = (rt: RichTextInterface | undefined) =>
+  !!rt && rt.map((el) => (typeof el === 'string' ? el : (el as any).text ?? '')).join('').trim() === MATCHING_BACK;
+
+/**
+ * Brings Matching cards made as Multi-Line cards (the first version) to the
+ * current form. Run at startup; a card already current is left alone.
+ */
+export async function migrateMatchingCards(plugin: RNPlugin): Promise<number> {
+  const powerup = await plugin.powerup.getPowerupByCode(MATCHING_POWERUP);
+  let migrated = 0;
+  for (const rem of (await powerup?.taggedRem()) ?? []) {
+    if (!(await rem.hasPowerup(BuiltInPowerupCodes.MultiLineCard))) continue;
+    try {
+      await makeMatching(rem);
+      migrated++;
+    } catch (e) {
+      console.warn('[Matching Cards] could not migrate', rem._id, e);
+    }
+  }
+  return migrated;
+}
+
+/** Undoes makeMatching: each pair is a forward card again, and the prompt loses its marker card. */
 export async function separateMatching(rem: PluginRem): Promise<number> {
   const pairs = await readPairs(rem);
   for (const child of await rem.getChildrenRem()) {
@@ -69,6 +100,7 @@ export async function separateMatching(rem: PluginRem): Promise<number> {
   }
   await rem.removePowerup(MATCHING_POWERUP);
   await rem.removePowerup(BuiltInPowerupCodes.MultiLineCard);
+  if (isMarker(rem.backText)) await rem.setBackText(undefined);
   return pairs.length;
 }
 
