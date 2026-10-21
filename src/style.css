@@ -20,76 +20,146 @@ body {
   color: var(--rn-clr-content-tertiary);
   font-size: 12px;
 }
-.matching .grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.matching .column {
+/* Matching (widgets/matching_queue.tsx): Rise's board. Each row is a left
+   piece (grip, tab on its right edge) and a right piece (socket on its left
+   edge); a connected row closes the gap and darkens both stripes. */
+.matching .board {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  gap: 10px;
 }
-.matching .tile {
+.matching .row {
+  --gap: 26px;
+  --stripe: #8fb8de;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  column-gap: var(--gap);
+  align-items: stretch;
+}
+.matching .row.connected {
+  --stripe: #0a6cb4;
+}
+.matching .piece {
   position: relative;
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 8px 10px 8px 22px;
-  border-radius: 8px;
-  border: 2px solid var(--rn-clr-border-primary);
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 8px 12px;
   background: var(--rn-clr-background-primary);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
+  border: 1px solid var(--rn-clr-border-primary);
+  border-radius: 3px;
   overflow-wrap: anywhere;
 }
-.matching .tile p {
+.matching .piece .content p {
   margin: 0;
 }
-.matching .tile img {
+.matching .piece img {
   max-width: 100%;
 }
-.matching .tile.selected {
-  border-color: var(--rn-clr-content-primary);
-  box-shadow: 0 0 0 2px var(--rn-clr-background-secondary);
+.matching .piece.left {
+  border-left: 8px solid var(--stripe);
+  padding-left: 22px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  z-index: 1;
+  transition: transform 0.15s ease;
 }
-.matching .tile .dot {
+.matching .row.connected .piece.left {
+  transform: translateX(calc(var(--gap) - 1px));
+}
+.matching .piece.left.dragging {
+  cursor: grabbing;
+  transition: none;
+  z-index: 5;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+.matching .piece.left.selected {
+  outline: 2px solid var(--rn-clr-blue, #1f6feb);
+}
+/* The tab: a half disc out of the left piece's right edge. */
+.matching .piece.left::after {
+  content: '';
+  position: absolute;
+  right: -11px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: inherit;
+  border: 1px solid var(--rn-clr-border-primary);
+  clip-path: inset(-2px -2px -2px 50%);
+}
+.matching .piece.right {
+  border-right: 8px solid var(--stripe);
+  padding-left: 22px;
+}
+/* The socket: a half disc cut into the right piece's left edge. */
+.matching .piece.right::before {
+  content: '';
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: var(--rn-clr-background-primary);
+  border: 1px solid var(--rn-clr-border-primary);
+  clip-path: inset(-2px -2px -2px 50%);
+}
+.matching .row.connected .piece.right::before {
+  border-color: transparent;
+}
+.matching .piece.target {
+  background: rgba(31, 111, 235, 0.08);
+  border-color: var(--rn-clr-blue, #1f6feb);
+}
+.matching .piece .grip {
   position: absolute;
   left: 7px;
   top: 50%;
-  width: 8px;
-  height: 8px;
-  margin-top: -4px;
-  border-radius: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  letter-spacing: -2px;
+  color: var(--rn-clr-content-tertiary);
 }
-.matching .tile .mark {
+.matching .piece .mark {
   position: absolute;
-  left: 6px;
-  top: 8px;
-  font-size: 12px;
+  left: 7px;
+  top: 4px;
+  font-size: 11px;
 }
-.matching .tile.ok {
-  border-color: #16a34a;
-  background: rgba(22, 163, 74, 0.1);
+.matching .row.ok {
+  --stripe: #16a34a;
 }
-.matching .tile.ko {
-  border-color: #dc2626;
-  background: rgba(220, 38, 38, 0.08);
+.matching .row.ok .piece {
+  background: rgba(22, 163, 74, 0.08);
 }
-.matching .tile.missing {
-  border-color: #d97706;
-  border-style: dashed;
+.matching .row.ko {
+  --stripe: #dc2626;
 }
-.matching .tile.ok .mark {
+.matching .row.ko .piece {
+  background: rgba(220, 38, 38, 0.07);
+}
+.matching .row.missing {
+  --stripe: #d97706;
+}
+.matching .row.ok .mark {
   color: #16a34a;
 }
-.matching .tile.ko .mark,
-.matching .tile.missing .mark {
+.matching .row.ko .mark,
+.matching .row.missing .mark {
   color: #dc2626;
 }
+.matching .row.ok .grip,
+.matching .row.ko .grip,
+.matching .row.missing .grip {
+  display: none;
+}
 .matching .answer {
+  grid-column: 1 / -1;
   margin: 4px 0 0 10px;
   font-size: 13px;
   color: #16a34a;
@@ -136,11 +206,12 @@ body {
   .matching {
     font-size: 14px;
   }
-  .matching .grid {
-    gap: 6px;
+  .matching .row {
+    --gap: 16px;
+    grid-template-columns: 1fr 1.15fr;
   }
-  .matching .tile {
-    padding: 6px 8px 6px 20px;
+  .matching .piece {
+    padding: 6px 8px 6px 18px;
   }
 }
 

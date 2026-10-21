@@ -1,18 +1,21 @@
 import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import '../style.css';
 import { useCurrentCard } from '../lib/current_card';
-import { Grade, grade, Links, shuffle, suggest } from '../lib/grading';
+import { Board, boardLinks, Grade, grade, newBoard, place, shuffle, suggest } from '../lib/grading';
 import { readPairs } from '../lib/matching';
 import { t } from '../lib/i18n';
 
 /**
- * Drawn on the card of every rem with the Matching powerup. The learner taps
- * an item on the left, then its match on the right (taps work the same with a
- * mouse and on a phone, unlike drag and drop). "Check" grades the links and
- * reveals the answer, so RemNote's own rating buttons appear; the widget names
- * the rating it suggests. The exercise is one card, so that rating schedules
- * the whole exercise.
+ * Drawn on the card of every rem with the Matching powerup, as Articulate
+ * Rise draws its matching exercise: the right column stays put, one row each;
+ * the left items are puzzle pieces to drag onto a row, where they snap to the
+ * right piece (swapping with the item that was there). Pointer events, so
+ * mouse, pen and touch alike; tapping a piece and then a row does the same.
+ *
+ * "Check" grades the connected rows and reveals the answer, so RemNote's own
+ * rating buttons appear; the widget names the rating it suggests. The exercise
+ * is one card, so that rating schedules the whole exercise.
  */
 
 interface ViewPair {
@@ -22,14 +25,24 @@ interface ViewPair {
   rightText: string;
 }
 
-const COLORS = ['#2563eb', '#d97706', '#7c3aed', '#059669', '#db2777', '#0891b2', '#65a30d', '#dc2626', '#4f46e5', '#ca8a04'];
+interface Drag {
+  from: number;
+  dx: number;
+  dy: number;
+  over: number | null;
+}
 
 function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?: string; revealed: boolean }) {
   const plugin = usePlugin();
   const [pairs, setPairs] = useState<ViewPair[] | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [links, setLinks] = useState<Links>({});
+  const [board, setBoard] = useState<Board | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [drag, setDrag] = useState<Drag | null>(null);
   const [result, setResult] = useState<Grade | null>(null);
+  const start = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+
+  // A new order every day, stable while the card is on screen; the two columns shuffled apart.
+  const seed = `${cardId ?? remId}:${new Date().toDateString()}`;
 
   useEffect(() => {
     (async () => {
@@ -45,115 +58,136 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
         });
       }
       setPairs(view);
+      setBoard(newBoard(shuffle(view.map((p) => p.id), `${seed}:left`)));
     })();
   }, [remId]);
 
-  // A new order every day, stable while the card is on screen.
-  const rightOrder = useMemo(
-    () => (pairs ? shuffle(pairs.map((p) => p.id), `${cardId ?? remId}:${new Date().toDateString()}`) : []),
-    [pairs]
-  );
+  const rightOrder = useMemo(() => (pairs ? shuffle(pairs.map((p) => p.id), `${seed}:right`) : []), [pairs]);
 
-  // Revealed by RemNote (space bar, its button) without "Check": grade whatever was linked, so the answer shows.
+  // Revealed by RemNote (space bar, its button) without "Check": grade what is connected, so the answer shows.
   useEffect(() => {
-    if (revealed && !result && pairs) setResult(grade(pairs, links));
-  }, [revealed, pairs]);
+    if (revealed && !result && pairs && board) setResult(grade(pairs, boardLinks(board, rightOrder)));
+  }, [revealed, pairs, board]);
 
-  if (!pairs) return null;
+  if (!pairs || !board) return null;
   if (pairs.length < 2) return <div className="matching muted">{t('tooFew')}</div>;
 
   const byId = new Map(pairs.map((p) => [p.id, p]));
-  const colorOf = (leftId: string) => COLORS[pairs.findIndex((p) => p.id === leftId) % COLORS.length];
-  const leftLinkedTo = (rightId: string) => Object.keys(links).find((l) => links[l] === rightId);
   const done = !!result;
+  const connectedCount = board.connected.filter(Boolean).length;
 
-  const clickLeft = (id: string) => {
-    if (done) return;
-    setSelected(selected === id ? null : id);
+  const drop = (from: number, to: number) => {
+    setBoard(place(board, from, to));
+    setSelected(null);
   };
-  const clickRight = (rightId: string) => {
+
+  // Every element under the pointer, minus the dragged piece: it is the topmost
+  // one, and it still sits inside the row it came from.
+  const rowAt = (x: number, y: number, dragged: Element): number | null => {
+    const el = document
+      .elementsFromPoint(x, y)
+      .filter((e) => !dragged.contains(e))
+      .map((e) => e.closest('[data-row]') as HTMLElement | null)
+      .find((e) => !!e);
+    return el ? Number(el.dataset.row) : null;
+  };
+
+  const onPointerDown = (row: number) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (done) return;
-    const holder = leftLinkedTo(rightId);
-    if (!selected) {
-      if (holder) {
-        const next = { ...links };
-        delete next[holder];
-        setLinks(next);
-      }
+    e.currentTarget.setPointerCapture(e.pointerId);
+    start.current = { x: e.clientX, y: e.clientY, moved: false };
+    setDrag({ from: row, dx: 0, dy: 0, over: null });
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!start.current || !drag) return;
+    const dx = e.clientX - start.current.x;
+    const dy = e.clientY - start.current.y;
+    if (Math.abs(dx) + Math.abs(dy) > 6) start.current.moved = true;
+    setDrag({ ...drag, dx, dy, over: rowAt(e.clientX, e.clientY, e.currentTarget) });
+  };
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!start.current || !drag) return;
+    const moved = start.current.moved;
+    const over = rowAt(e.clientX, e.clientY, e.currentTarget);
+    start.current = null;
+    setDrag(null);
+    if (!moved) {
+      // A tap: pick the piece up, or drop the one already picked here.
+      if (selected === null) setSelected(drag.from);
+      else drop(selected, drag.from);
       return;
     }
-    const next = { ...links };
-    if (holder) delete next[holder];
-    next[selected] = rightId;
-    setLinks(next);
-    // The next left item still free, to keep tapping.
-    setSelected(pairs.find((p) => p.id !== selected && !next[p.id])?.id ?? null);
+    if (over !== null) drop(drag.from, over);
+  };
+  const tapRow = (row: number) => {
+    if (done || selected === null) return;
+    drop(selected, row);
   };
 
   const check = async () => {
-    setResult(grade(pairs, links));
+    setResult(grade(pairs, boardLinks(board, rightOrder)));
     setSelected(null);
     await plugin.queue.showAnswer();
   };
 
+  const rowState = (row: number) => {
+    if (!result) return '';
+    const leftId = board.order[row];
+    return result.correct.includes(leftId) ? 'ok' : result.wrong.includes(leftId) ? 'ko' : 'missing';
+  };
   const suggestion = result ? suggest(result) : null;
-  const status = (leftId: string) =>
-    !result ? '' : result.correct.includes(leftId) ? 'ok' : result.wrong.includes(leftId) ? 'ko' : 'missing';
+  // The left item that belongs beside a row's right side (same right text counts).
+  const rightKey = (id: string) => byId.get(id)!.rightText.replace(/\s+/g, ' ').trim().toLowerCase();
+  const belongsTo = (row: number) => pairs.find((p) => rightKey(p.id) === rightKey(rightOrder[row]))!;
 
   return (
     <div className="matching">
-      <div className="grid">
-        <div className="column">
-          {pairs.map((p) => {
-            const linked = links[p.id];
-            const st = status(p.id);
-            return (
-              <div key={p.id} className="left-wrap">
-                <button
-                  className={`tile left ${selected === p.id ? 'selected' : ''} ${st}`}
-                  style={linked && !done ? { borderColor: colorOf(p.id) } : undefined}
-                  onClick={() => clickLeft(p.id)}
-                >
-                  {linked && !done && <span className="dot" style={{ background: colorOf(p.id) }} />}
-                  {st === 'ok' && <span className="mark">✔</span>}
-                  {(st === 'ko' || st === 'missing') && <span className="mark">✘</span>}
-                  <span dangerouslySetInnerHTML={{ __html: p.leftHtml }} />
-                </button>
-                {done && st !== 'ok' && (
-                  <div className="answer">
-                    → <span dangerouslySetInnerHTML={{ __html: p.rightHtml }} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div className="column">
-          {rightOrder.map((rightId) => {
-            const holder = leftLinkedTo(rightId);
-            const st = holder ? status(holder) : '';
-            return (
-              <button
-                key={rightId}
-                className={`tile right ${st}`}
-                style={holder && !done ? { borderColor: colorOf(holder) } : undefined}
-                onClick={() => clickRight(rightId)}
+      <div className="board">
+        {rightOrder.map((rightId, row) => {
+          const leftId = board.order[row];
+          const connected = board.connected[row];
+          const dragging = drag?.from === row && start.current?.moved;
+          const st = rowState(row);
+          return (
+            <div key={rightId} className={`row ${connected ? 'connected' : ''} ${st}`} data-row={row}>
+              <div
+                className={`piece left ${selected === row ? 'selected' : ''} ${dragging ? 'dragging' : ''} ${
+                  drag?.over === row && drag.from !== row ? 'target' : ''
+                }`}
+                style={dragging ? { transform: `translate(${drag!.dx}px, ${drag!.dy}px)` } : undefined}
+                onPointerDown={onPointerDown(row)}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={() => {
+                  start.current = null;
+                  setDrag(null);
+                }}
               >
-                {holder && !done && <span className="dot" style={{ background: colorOf(holder) }} />}
-                <span dangerouslySetInnerHTML={{ __html: byId.get(rightId)!.rightHtml }} />
-              </button>
-            );
-          })}
-        </div>
+                <span className="grip">⋮⋮</span>
+                {st === 'ok' && <span className="mark">✔</span>}
+                {(st === 'ko' || st === 'missing') && <span className="mark">✘</span>}
+                <span className="content" dangerouslySetInnerHTML={{ __html: byId.get(leftId)!.leftHtml }} />
+              </div>
+              <div className={`piece right ${drag?.over === row && drag.from !== row ? 'target' : ''}`} onClick={() => tapRow(row)}>
+                <span className="content" dangerouslySetInnerHTML={{ __html: byId.get(rightId)!.rightHtml }} />
+              </div>
+              {done && st !== 'ok' && (
+                <div className="answer">
+                  ✔ <span dangerouslySetInnerHTML={{ __html: belongsTo(row).leftHtml }} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {!done ? (
         <div className="bar">
           <span className="muted">
-            {t('linked', Object.keys(links).length, pairs.length)} · {t('howTo')}
+            {t('linked', connectedCount, pairs.length)} · {t('howTo')}
           </span>
           <span className="spacer" />
-          <button className="primary" disabled={!Object.keys(links).length} onClick={check}>
+          <button className="primary" disabled={!connectedCount} onClick={check}>
             {t('check')}
           </button>
         </div>
@@ -175,7 +209,7 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
 function MatchingQueue() {
   const card = useCurrentCard();
   if (!card) return null;
-  // A fresh exercise (links and all) for every card the queue shows.
+  // A fresh exercise (board and all) for every card the queue shows.
   return <MatchingExercise key={card.cardId ?? card.remId} remId={card.remId} cardId={card.cardId} revealed={card.revealed} />;
 }
 

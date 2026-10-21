@@ -11,7 +11,7 @@ Atenção especial deve ser dada aos seguintes aspectos:   ← Matching
     …
 ```
 
-In the queue the card shows the left items and the right items, shuffled. Tap an item on the left, then its match on the right (tap a linked item again to undo). **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card (rate it with RemNote's own buttons) and names the rating it suggests: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (a Multi-Line card whose answer lines are the pairs), so it is scheduled as one.
+In the queue the card is drawn as Articulate Rise draws its matching exercise: the right column stays put, one row each, and the left items are puzzle pieces you drag onto a row, where they snap to the right piece (swapping with the item that was there). Tapping a piece and then a row does the same. **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card (rate it with RemNote's own buttons) and names the rating it suggests: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (a Multi-Line card whose answer lines are the pairs), so it is scheduled as one.
 
 To make one: write the prompt, its children as `left :: right`, put the cursor in the prompt and run **Make Matching card**. The pairs' own cards are switched off (practice direction "none").
 

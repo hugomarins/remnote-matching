@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { grade, shuffle, suggest } from './grading';
+import { boardLinks, grade, newBoard, place, shuffle, suggest } from './grading';
 
 const pairs = [
   { id: 'a', rightText: 'determinam a dificuldade de dragagem' },
@@ -32,5 +32,19 @@ assert.deepStrictEqual(shuffle(items, 'card1'), shuffle(items, 'card1'));
 assert.deepStrictEqual([...shuffle(items, 'card1')].sort(), items);
 for (const seed of ['x', 'y', 'z', 'card1', 'card2', '']) assert.notDeepStrictEqual(shuffle(items, seed), items);
 assert.deepStrictEqual(shuffle(['a'], 's'), ['a']);
+
+// ── The board ──
+{
+  const right = ['a', 'b', 'c'];
+  let b = newBoard(['c', 'a', 'b']);
+  assert.deepStrictEqual(boardLinks(b, right), {}, 'nothing connected yet');
+  b = place(b, 1, 0); // drag "a" onto row 0
+  assert.deepStrictEqual(b, { order: ['a', 'c', 'b'], connected: [true, false, false] });
+  b = place(b, 2, 2); // "b" dropped on the row it sits in: connected in place (beside "c")
+  assert.deepStrictEqual(boardLinks(b, right), { a: 'a', b: 'c' });
+  b = place(b, 0, 1); // move the connected "a" to row 1: "c" goes back to row 0, unconnected
+  assert.deepStrictEqual(b, { order: ['c', 'a', 'b'], connected: [false, true, true] });
+  assert.deepStrictEqual(boardLinks(b, right), { a: 'b', b: 'c' });
+}
 
 console.log('grading.test.ts: ok');
