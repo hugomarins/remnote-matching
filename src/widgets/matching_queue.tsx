@@ -1,7 +1,9 @@
 import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import '../style.css';
+import { MATCHING_WIDGET } from '../lib/consts';
 import { useCurrentCard } from '../lib/current_card';
+import { useReportHeight } from '../lib/frame_height';
 import { Board, boardLinks, Grade, grade, newBoard, place, shuffle, suggest } from '../lib/grading';
 import { readPairs } from '../lib/matching';
 import { t } from '../lib/i18n';
@@ -212,9 +214,16 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
 
 function MatchingQueue() {
   const card = useCurrentCard();
-  if (!card) return null;
-  // A fresh exercise (board and all) for every card the queue shows.
-  return <MatchingExercise key={card.cardId ?? card.remId} remId={card.remId} cardId={card.cardId} revealed={card.revealed} />;
+  const root = useRef<HTMLDivElement>(null);
+  useReportHeight(root, MATCHING_WIDGET);
+  return (
+    <div ref={root}>
+      {/* A fresh exercise (board and all) for every card the queue shows. */}
+      {card && (
+        <MatchingExercise key={card.cardId ?? card.remId} remId={card.remId} cardId={card.cardId} revealed={card.revealed} />
+      )}
+    </div>
+  );
 }
 
 renderWidget(MatchingQueue);

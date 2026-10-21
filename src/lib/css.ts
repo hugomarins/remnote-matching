@@ -17,9 +17,11 @@ const HIDE_ITEM_TAG = itemSlugs
  * The queue sizes a Flashcard widget's frame to a short default, which cut the
  * piles and pairs off (seen 2026-10-21). As Incremental RemNote does for its
  * own queue widget (incremental-everything src/register/callbacks.ts,
- * QUEUE_LAYOUT_FIX_CSS), every wrapper between the queue and our frame grows,
- * so the frame fills the card down to the answer buttons. Each rule is gated
- * on our frame being in the DOM, so other cards are untouched.
+ * QUEUE_LAYOUT_FIX_CSS), the wrappers between the queue and our frame grow, so
+ * a short exercise fills the card. A long one is handled by lib/frame_height.ts,
+ * which sets the frame's min-height to the content's (the chain does not reach
+ * every wrapper of an ordinary flashcard). Each rule is gated on our frame
+ * being in the DOM, so other cards are untouched.
  */
 function growChain(widget: string) {
   const frame = `iframe[data-plugin-id="${PLUGIN_ID}"][src*="widgetName=${widget}&"]`;
@@ -37,9 +39,6 @@ ${queue} div.fade-in-first-load:has(${frame}),
 ${queue} div.fade-in-first-load:has(${frame}) > div,
 ${queue} ${frame} {
   flex-grow: 1 !important;
-}
-${frame} {
-  min-height: 420px;
 }
 ${box} .beautiful-queue-card-scroll-stage {
   display: flex !important;

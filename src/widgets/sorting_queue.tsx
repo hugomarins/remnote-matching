@@ -1,7 +1,9 @@
 import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useRef, useState } from 'react';
 import '../style.css';
+import { SORTING_WIDGET } from '../lib/consts';
 import { useCurrentCard } from '../lib/current_card';
+import { useReportHeight } from '../lib/frame_height';
 import { t } from '../lib/i18n';
 import { readSortingItem } from '../lib/sorting';
 
@@ -131,9 +133,14 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
 
 function SortingQueue() {
   const card = useCurrentCard();
-  if (!card) return null;
-  // A fresh item (state and all) for every card the queue shows.
-  return <SortingItem key={card.cardId ?? card.remId} remId={card.remId} revealed={card.revealed} />;
+  const root = useRef<HTMLDivElement>(null);
+  useReportHeight(root, SORTING_WIDGET);
+  return (
+    <div ref={root}>
+      {/* A fresh item (state and all) for every card the queue shows. */}
+      {card && <SortingItem key={card.cardId ?? card.remId} remId={card.remId} revealed={card.revealed} />}
+    </div>
+  );
 }
 
 renderWidget(SortingQueue);

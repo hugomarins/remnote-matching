@@ -1,12 +1,7 @@
-/* The widget's own page fills its frame (sized by lib/css.ts) and scrolls when
-   the exercise is taller than the card. */
+/* The page is as tall as the exercise: the frame is sized to it (lib/frame_height.ts). */
 html,
 body {
-  height: 100%;
   margin: 0;
-}
-body {
-  overflow-y: auto;
 }
 
 /* Our own colours. RemNote's theme variables (--rn-clr-…) cannot be relied
