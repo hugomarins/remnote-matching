@@ -1,4 +1,4 @@
-import { QueueInteractionScore, RNPlugin, usePlugin } from '@remnote/plugin-sdk';
+import { QueueInteractionScore, RNPlugin, usePlugin, WidgetLocation } from '@remnote/plugin-sdk';
 import { useEffect } from 'react';
 
 /**
@@ -20,6 +20,16 @@ import { useEffect } from 'react';
  *   as answerCard(score) on the queue component that shows the card on screen,
  *   the very call of the answer buttons, so it rates the right card even
  *   inside a Card Cluster (unlike queue.getCurrentCard(), pinned to the anchor).
+ *
+ * After a Forgot, RemNote may show the AI Explanation with "Next card" (its
+ * forgot-mode screen; native type-in-answer cards skip it, since it is shown
+ * only when revealedAnswerWrong is unset). That screen advances on any key,
+ * but only keys RemNote receives, and the focus is still ours. So the next
+ * Enter or Space after a Forgot rates Again once more, which in that screen
+ * is exactly what "Next card" does (goToNextCard → answerCard(AGAIN)): with
+ * the screen up, shouldShowInsightsAfterForgot() is false and the rating is
+ * saved and the queue moves on. Only while the answer is still revealed and
+ * the widget still shows the card it rated, so it can never rate the next one.
  */
 
 const PLUGIN_ID = 'matching-cards';
@@ -50,14 +60,31 @@ export function useSuggestedScore(score: QueueInteractionScore | undefined) {
     if (score === undefined) return;
     // RemNote's reveal moves the focus to its own queue element; take it back so the keys reach us.
     const refocus = setTimeout(() => window.focus(), 80);
-    let rated = false;
+    let rated: { score: QueueInteractionScore; cardId?: string } | undefined;
+    let advanced = false;
+    const cardOnScreen = async () => (await plugin.widget.getWidgetContext<WidgetLocation.Flashcard>().catch(() => undefined))?.cardId;
+
     const onKey = (e: KeyboardEvent) => {
-      if (rated || e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
-      const chosen = e.key === 'Enter' ? score : KEY_SCORES[e.key];
-      if (chosen === undefined) return;
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (!rated) {
+        const chosen = e.key === 'Enter' ? score : KEY_SCORES[e.key];
+        if (chosen === undefined) return;
+        e.preventDefault();
+        rated = { score: chosen };
+        void (async () => {
+          rated!.cardId = await cardOnScreen();
+          await plugin.queue.rateCurrentCard(chosen);
+        })();
+        return;
+      }
+      // RemNote's "Next card" after a Forgot (see above).
+      if (rated.score !== QueueInteractionScore.AGAIN || advanced || (e.key !== 'Enter' && e.key !== ' ')) return;
       e.preventDefault();
-      rated = true;
-      void plugin.queue.rateCurrentCard(chosen);
+      advanced = true;
+      void (async () => {
+        const sameCard = rated!.cardId !== undefined && (await cardOnScreen()) === rated!.cardId;
+        if (sameCard && (await plugin.queue.hasRevealedAnswer())) await plugin.queue.rateCurrentCard(QueueInteractionScore.AGAIN);
+      })();
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -76,8 +103,18 @@ const COLORS: Partial<Record<number, string>> = {
 
 const highlightCss = (score: number) => {
   const color = COLORS[score] ?? '#16a34a';
-  const button = `.rn-queue:has(iframe[data-plugin-id="${PLUGIN_ID}"]) button[data-test="accuracy-button-${score}"]`;
+  const queue = `.rn-queue:has(iframe[data-plugin-id="${PLUGIN_ID}"])`;
+  const button = `${queue} button[data-test="accuracy-button-${score}"]`;
   return `
+/* Room for the tab above the row. RemNote's own highlight is what Incremental
+   RemNote's card info bar watches for (.rn-queue__answer-btn.border-t-transparent
+   .rounded-t-none, in its card_info_bar_dock.ts), and a plugin cannot put
+   classes on RemNote's buttons. Padding the row grows RemNote's bottom
+   controls, which it re-measures (--beautiful-queue-bottom-controls-height),
+   and the docked bar, positioned from that, rises by the tab's height. */
+${queue} .rn-queue__answer-btns:has(button[data-test="accuracy-button-${score}"]) {
+  padding-top: 25px !important;
+}
 ${button} {
   border-color: ${color} !important;
   border-top-color: transparent !important;
