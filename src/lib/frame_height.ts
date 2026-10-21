@@ -5,11 +5,11 @@ import { MATCHING_WIDGET, SORTING_WIDGET } from './consts';
 /**
  * Sizing the queue widgets' frames to their content.
  *
- * RemNote gives a Flashcard widget's frame a 500 px minimum (min-h-[500px]),
- * and the grow chain of lib/css.ts (Incremental RemNote's fix for its own
- * reader, a Plugin queue item) does not reach the frame of an ordinary
- * flashcard: a long list was cut at ~500 px, with a scrollbar inside and a
- * blank band below (seen 2026-10-21). So each widget measures its content and
+ * RemNote gives a Flashcard widget's frame a 500 px minimum (min-h-[500px])
+ * and nothing more: a long list was cut at ~500 px, with a scrollbar inside
+ * and a blank band below (seen 2026-10-21). Making the queue's wrappers grow,
+ * as Incremental RemNote does for its reader, fought the AI insight panel
+ * (see lib/css.ts). So each widget measures its content and
  * publishes the height in session storage, and the index widget, the only one
  * whose registerCSS is applied, sets it as the frame's min-height. The frame is
  * then never shorter than the exercise; a long one makes the card scroll, as
