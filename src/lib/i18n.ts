@@ -1,11 +1,16 @@
-/** The plugin's few strings, in English and Portuguese (chosen by the browser's language). */
+/**
+ * The plugin's few strings, in English and Portuguese (chosen by the browser's
+ * language). The rating names are RemNote's button labels (Forgot, Hard, Easy,
+ * Instant for Again, Hard, Good, Easy), so the suggestion names the button it
+ * highlights.
+ */
 const STRINGS = {
   en: {
     check: 'Check',
-    again: 'Again',
+    again: 'Forgot',
     hard: 'Hard',
-    good: 'Good',
-    easy: 'Easy',
+    good: 'Easy',
+    easy: 'Instant',
     suggested: 'Suggested rating',
     enterHint: 'Enter to accept',
     howTo: 'drag each item on the left onto its match (or tap it, then the match)',
@@ -18,10 +23,10 @@ const STRINGS = {
   },
   pt: {
     check: 'Conferir',
-    again: 'Errei',
+    again: 'Esqueci',
     hard: 'Difícil',
-    good: 'Bom',
-    easy: 'Fácil',
+    good: 'Fácil',
+    easy: 'Instantâneo',
     suggested: 'Avaliação sugerida',
     enterHint: 'Enter para aceitar',
     howTo: 'arraste cada item da esquerda até o seu par (ou toque nele e depois no par)',
