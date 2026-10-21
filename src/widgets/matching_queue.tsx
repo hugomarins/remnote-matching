@@ -151,9 +151,7 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
           return (
             <div key={rightId} className={`row ${connected ? 'connected' : ''} ${st}`} data-row={row}>
               <div
-                className={`piece left ${selected === row ? 'selected' : ''} ${dragging ? 'dragging' : ''} ${
-                  drag?.over === row && drag.from !== row ? 'target' : ''
-                }`}
+                className={`piece left ${selected === row ? 'selected' : ''} ${dragging ? 'dragging' : ''}`}
                 style={dragging ? { transform: `translate(${drag!.dx}px, ${drag!.dy}px)` } : undefined}
                 onPointerDown={onPointerDown(row)}
                 onPointerMove={onPointerMove}
