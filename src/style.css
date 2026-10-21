@@ -9,45 +9,78 @@ body {
   overflow-y: auto;
 }
 
+/* Our own colours. RemNote's theme variables (--rn-clr-…) cannot be relied
+   on in a queue widget's frame (seen 2026-10-21: borders and fills that used
+   them vanished, leaving only the stripes; --rn-clr-border-primary is not even
+   RemNote's, it is Incremental RemNote's own). RemNote's theme, not the
+   system's, picks the palette: the SDK puts `dark` or `light` on <body>. */
 .matching {
+  --mc-text: #1f2937;
+  --mc-muted: #6b7280;
+  --mc-surface: #ffffff;
+  --mc-surface-2: #f3f4f6;
+  --mc-border: #c5ccd5;
+  --mc-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
+  --mc-lift: 0 10px 24px rgba(15, 23, 42, 0.24);
+  --mc-idle: #a7cbe9;
+  --mc-on: #0b67b0;
+  --mc-accent: #1f6feb;
+  --mc-ok: #16a34a;
+  --mc-ko: #dc2626;
+  --mc-warn: #d97706;
   box-sizing: border-box;
-  padding: 8px 4px;
+  padding: 8px 6px;
   font-size: 15px;
   line-height: 1.35;
-  color: var(--rn-clr-content-primary);
+  color: var(--mc-text);
+}
+body.dark .matching {
+  --mc-text: #e5e7eb;
+  --mc-muted: #9ca3af;
+  --mc-surface: #2a2e35;
+  --mc-surface-2: #22262c;
+  --mc-border: #4b525d;
+  --mc-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --mc-lift: 0 10px 24px rgba(0, 0, 0, 0.6);
+  --mc-idle: #4f7ea8;
+  --mc-on: #3d9df0;
 }
 .matching .muted {
-  color: var(--rn-clr-content-tertiary);
+  color: var(--mc-muted);
   font-size: 12px;
 }
+
 /* Matching (widgets/matching_queue.tsx): Rise's board. Each row is a left
-   piece (grip, tab on its right edge) and a right piece (socket on its left
-   edge); a connected row closes the gap and darkens both stripes. */
+   piece (grip, a tab on its right edge) and a right piece (a socket cut into
+   its left edge). Unconnected: light stripes and a gap. Connected: the left
+   piece slides into the socket and both stripes turn dark. */
 .matching .board {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .matching .row {
-  --gap: 26px;
-  --stripe: #8fb8de;
+  --gap: 30px;
+  --stripe: var(--mc-idle);
+  --tab: 11px;
   display: grid;
   grid-template-columns: 1fr 1.3fr;
   column-gap: var(--gap);
   align-items: stretch;
 }
 .matching .row.connected {
-  --stripe: #0a6cb4;
+  --stripe: var(--mc-on);
 }
 .matching .piece {
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 46px;
-  padding: 8px 12px;
-  background: var(--rn-clr-background-primary);
-  border: 1px solid var(--rn-clr-border-primary);
-  border-radius: 3px;
+  min-height: 52px;
+  padding: 10px 14px;
+  background: var(--mc-surface);
+  border: 1px solid var(--mc-border);
+  border-radius: 2px;
+  box-shadow: var(--mc-shadow);
   overflow-wrap: anywhere;
 }
 .matching .piece .content p {
@@ -56,144 +89,167 @@ body {
 .matching .piece img {
   max-width: 100%;
 }
+
 .matching .piece.left {
-  border-left: 8px solid var(--stripe);
-  padding-left: 22px;
+  border-left: 10px solid var(--stripe);
+  padding-left: 26px;
+  padding-right: calc(var(--tab) + 10px);
   cursor: grab;
   touch-action: none;
   user-select: none;
   z-index: 1;
-  transition: transform 0.15s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .matching .row.connected .piece.left {
-  transform: translateX(calc(var(--gap) - 1px));
+  transform: translateX(var(--gap));
+  box-shadow: none;
 }
 .matching .piece.left.dragging {
   cursor: grabbing;
   transition: none;
   z-index: 5;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--mc-lift);
 }
 .matching .piece.left.selected {
-  outline: 2px solid var(--rn-clr-blue, #1f6feb);
+  outline: 2px solid var(--mc-accent);
+  outline-offset: 2px;
 }
-/* The tab: a half disc out of the left piece's right edge. */
+/* The tab: a half disc out of the left piece's right edge, same fill and border. */
 .matching .piece.left::after {
   content: '';
   position: absolute;
-  right: -11px;
+  right: calc(-1 * var(--tab) - 1px);
   top: 50%;
-  width: 20px;
-  height: 20px;
-  margin-top: -10px;
+  width: calc(2 * var(--tab));
+  height: calc(2 * var(--tab));
+  margin-top: calc(-1 * var(--tab) - 1px);
   border-radius: 50%;
-  background: inherit;
-  border: 1px solid var(--rn-clr-border-primary);
+  background: var(--mc-surface);
+  border: 1px solid var(--mc-border);
   clip-path: inset(-2px -2px -2px 50%);
 }
+
 .matching .piece.right {
-  border-right: 8px solid var(--stripe);
-  padding-left: 22px;
+  border-right: 10px solid var(--stripe);
+  padding-left: calc(var(--tab) + 14px);
+  /* The socket is a real hole: whatever is behind the card shows through. */
+  -webkit-mask: radial-gradient(circle at 0 50%, transparent var(--tab), #000 calc(var(--tab) + 0.5px));
+  mask: radial-gradient(circle at 0 50%, transparent var(--tab), #000 calc(var(--tab) + 0.5px));
 }
-/* The socket: a half disc cut into the right piece's left edge. */
+/* …and its rim, drawn just outside the hole. */
 .matching .piece.right::before {
   content: '';
   position: absolute;
-  left: -11px;
+  left: calc(-1 * var(--tab) - 2px);
   top: 50%;
-  width: 20px;
-  height: 20px;
-  margin-top: -10px;
+  width: calc(2 * var(--tab) + 2px);
+  height: calc(2 * var(--tab) + 2px);
+  margin-top: calc(-1 * var(--tab) - 2px);
   border-radius: 50%;
-  background: var(--rn-clr-background-primary);
-  border: 1px solid var(--rn-clr-border-primary);
-  clip-path: inset(-2px -2px -2px 50%);
-}
-.matching .row.connected .piece.right::before {
-  border-color: transparent;
+  border: 1px solid var(--mc-border);
+  box-sizing: content-box;
+  pointer-events: none;
 }
 .matching .piece.target {
-  background: rgba(31, 111, 235, 0.08);
-  border-color: var(--rn-clr-blue, #1f6feb);
+  border-color: var(--mc-accent);
+  background: color-mix(in srgb, var(--mc-accent) 8%, var(--mc-surface));
 }
 .matching .piece .grip {
   position: absolute;
-  left: 7px;
+  left: 9px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: -2px;
-  color: var(--rn-clr-content-tertiary);
+  color: var(--mc-muted);
 }
 .matching .piece .mark {
   position: absolute;
-  left: 7px;
-  top: 4px;
-  font-size: 11px;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 700;
 }
+
 .matching .row.ok {
-  --stripe: #16a34a;
-}
-.matching .row.ok .piece {
-  background: rgba(22, 163, 74, 0.08);
+  --stripe: var(--mc-ok);
 }
 .matching .row.ko {
-  --stripe: #dc2626;
-}
-.matching .row.ko .piece {
-  background: rgba(220, 38, 38, 0.07);
+  --stripe: var(--mc-ko);
 }
 .matching .row.missing {
-  --stripe: #d97706;
+  --stripe: var(--mc-warn);
+}
+.matching .row.ok .piece {
+  background: color-mix(in srgb, var(--mc-ok) 9%, var(--mc-surface));
+}
+.matching .row.ko .piece {
+  background: color-mix(in srgb, var(--mc-ko) 8%, var(--mc-surface));
+}
+.matching .row.ok .piece.left::after {
+  background: color-mix(in srgb, var(--mc-ok) 9%, var(--mc-surface));
+}
+.matching .row.ko .piece.left::after {
+  background: color-mix(in srgb, var(--mc-ko) 8%, var(--mc-surface));
 }
 .matching .row.ok .mark {
-  color: #16a34a;
+  color: var(--mc-ok);
 }
 .matching .row.ko .mark,
 .matching .row.missing .mark {
-  color: #dc2626;
+  color: var(--mc-ko);
 }
 .matching .row.ok .grip,
 .matching .row.ko .grip,
 .matching .row.missing .grip {
   display: none;
 }
+.matching .row.ok .piece.left,
+.matching .row.ko .piece.left,
+.matching .row.missing .piece.left {
+  cursor: default;
+}
 .matching .answer {
   grid-column: 1 / -1;
-  margin: 4px 0 0 10px;
+  margin: 6px 0 0 12px;
   font-size: 13px;
-  color: #16a34a;
+  color: var(--mc-ok);
 }
 .matching .answer p {
   display: inline;
   margin: 0;
 }
+
 .matching .bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 .matching .spacer {
   flex: 1;
 }
 .matching .suggestion {
   font-size: 13px;
-  color: var(--rn-clr-content-secondary);
+  color: var(--mc-muted);
+}
+.matching .suggestion b {
+  color: var(--mc-text);
 }
 .matching .bar button {
-  padding: 6px 12px;
+  padding: 7px 16px;
   border-radius: 6px;
-  border: 1px solid var(--rn-clr-border-primary);
-  background: var(--rn-clr-background-secondary);
-  color: var(--rn-clr-content-primary);
+  border: 1px solid var(--mc-border);
+  background: var(--mc-surface-2);
+  color: var(--mc-text);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 .matching .bar button.primary {
-  background: var(--rn-clr-blue, #1f6feb);
+  background: var(--mc-accent);
   border-color: transparent;
   color: #fff;
   font-weight: 600;
@@ -207,11 +263,15 @@ body {
     font-size: 14px;
   }
   .matching .row {
-    --gap: 16px;
-    grid-template-columns: 1fr 1.15fr;
+    --gap: 18px;
+    --tab: 9px;
+    grid-template-columns: 1fr 1.1fr;
   }
   .matching .piece {
-    padding: 6px 8px 6px 18px;
+    padding: 8px 10px;
+  }
+  .matching .piece.left {
+    padding-left: 20px;
   }
 }
 
@@ -219,17 +279,17 @@ body {
 .sorting .stage {
   display: flex;
   justify-content: center;
-  padding: 8px 0 18px;
+  padding: 8px 0 20px;
 }
 .sorting .item {
   position: relative;
   min-width: 180px;
   max-width: 320px;
-  padding: 22px 20px 26px;
-  border-radius: 6px;
-  border-top: 3px solid var(--rn-clr-blue, #1f6feb);
-  background: var(--rn-clr-background-primary);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  padding: 24px 22px 28px;
+  border-radius: 4px;
+  border-top: 3px solid var(--mc-accent);
+  background: var(--mc-surface);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.16);
   text-align: center;
   font-weight: 600;
   cursor: grab;
@@ -242,24 +302,24 @@ body {
 }
 .sorting .item.dragging {
   cursor: grabbing;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--mc-lift);
 }
 .sorting .item .grip {
   position: absolute;
   left: 50%;
-  bottom: 6px;
+  bottom: 7px;
   transform: translateX(-50%);
   font-size: 10px;
-  color: var(--rn-clr-content-tertiary);
+  color: var(--mc-muted);
 }
 .sorting .item.ok {
-  border-top-color: #16a34a;
-  background: rgba(22, 163, 74, 0.1);
+  border-top-color: var(--mc-ok);
+  background: color-mix(in srgb, var(--mc-ok) 10%, var(--mc-surface));
   cursor: default;
 }
 .sorting .item.ko {
-  border-top-color: #dc2626;
-  background: rgba(220, 38, 38, 0.08);
+  border-top-color: var(--mc-ko);
+  background: color-mix(in srgb, var(--mc-ko) 8%, var(--mc-surface));
   cursor: default;
 }
 .sorting .item.revealed {
@@ -267,14 +327,14 @@ body {
 }
 .sorting .piles {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 .sorting .pile {
-  min-height: 96px;
+  min-height: 100px;
   padding: 10px;
-  border-radius: 4px;
-  border: 1.5px dashed var(--rn-clr-content-tertiary);
-  background: var(--rn-clr-background-secondary);
+  border-radius: 2px;
+  border: 1.5px dashed var(--mc-border);
+  background: var(--mc-surface-2);
   color: inherit;
   font: inherit;
   font-weight: 600;
@@ -286,18 +346,18 @@ body {
 }
 .sorting .pile.over {
   border-style: solid;
-  border-color: var(--rn-clr-blue, #1f6feb);
-  background: rgba(31, 111, 235, 0.1);
+  border-color: var(--mc-accent);
+  background: color-mix(in srgb, var(--mc-accent) 10%, var(--mc-surface-2));
 }
 .sorting .pile.ok {
   border-style: solid;
-  border-color: #16a34a;
-  background: rgba(22, 163, 74, 0.12);
+  border-color: var(--mc-ok);
+  background: color-mix(in srgb, var(--mc-ok) 12%, var(--mc-surface-2));
 }
 .sorting .pile.ko {
   border-style: solid;
-  border-color: #dc2626;
-  background: rgba(220, 38, 38, 0.1);
+  border-color: var(--mc-ko);
+  background: color-mix(in srgb, var(--mc-ko) 10%, var(--mc-surface-2));
 }
 .sorting .pile.dim {
   opacity: 0.5;
