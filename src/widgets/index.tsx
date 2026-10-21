@@ -11,6 +11,7 @@ import {
 } from '../lib/consts';
 import { CSS, CSS_ID } from '../lib/css';
 import { registerFrameHeights } from '../lib/frame_height';
+import { registerSuggestionHighlight } from '../lib/suggestion';
 import { makeMatching, migrateMatchingCards, separateMatching } from '../lib/matching';
 import { makeSorting, separateSorting } from '../lib/sorting';
 
@@ -36,6 +37,7 @@ async function onActivate(plugin: ReactRNPlugin) {
 
   await plugin.app.registerCSS(CSS_ID, CSS);
   registerFrameHeights(plugin);
+  registerSuggestionHighlight(plugin);
 
   for (const [name, powerupFilter] of [
     [MATCHING_WIDGET, MATCHING_POWERUP],

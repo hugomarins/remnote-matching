@@ -1,4 +1,4 @@
-import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
+import { QueueInteractionScore, renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useRef, useState } from 'react';
 import '../style.css';
 import { ExerciseHeader } from '../components/ExerciseHeader';
@@ -7,18 +7,15 @@ import { useCurrentCard } from '../lib/current_card';
 import { useReportHeight } from '../lib/frame_height';
 import { t } from '../lib/i18n';
 import { readSortingItem } from '../lib/sorting';
+import { useSuggestedScore } from '../lib/suggestion';
 
 /**
  * Drawn on the card of every item of a sorting exercise, Rise style: the item
  * in a card at the top, the piles as boxes below. Drag the item onto a pile
  * (pointer events: mouse, pen and touch alike) or tap a pile. That reveals
- * the answer, so RemNote's own rating buttons appear; the widget names the
- * rating it suggests (Good if right, Again if not). Each item keeps its own
- * schedule.
- *
- * The rating is left to RemNote's buttons on purpose: inside a Card Cluster,
- * plugin.queue.rateCurrentCard() acts on the cluster's anchor card, not
- * necessarily on the item on screen.
+ * the answer, so RemNote's own rating buttons appear, the suggested one (Good
+ * if right, Again if not) highlighted and applied by Enter (lib/suggestion.ts).
+ * Each item keeps its own schedule.
  */
 
 interface View {
@@ -49,6 +46,11 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
       });
     })();
   }, [remId]);
+
+  // Right: Good; wrong: Again. Nothing when RemNote revealed it before an answer.
+  useSuggestedScore(
+    view && chosen !== null ? (chosen === view.answer ? QueueInteractionScore.GOOD : QueueInteractionScore.AGAIN) : undefined
+  );
 
   if (!view) return null;
   const done = chosen !== null || revealed;
@@ -127,7 +129,7 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
             <b>{right ? t('right') : t('wrong')}</b>
             <span className="spacer" />
             <span className="suggestion">
-              {t('suggested')}: <b>{t(right ? 'good' : 'again')}</b>
+              {t('suggested')}: <b>{t(right ? 'good' : 'again')}</b> · {t('enterHint')}
             </span>
           </>
         )}

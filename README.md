@@ -11,7 +11,7 @@ Atenção especial deve ser dada aos seguintes aspectos: → ⇄   ← Matching
     …
 ```
 
-In the queue the card is drawn as Articulate Rise draws its matching exercise: the right column stays put, one row each, and the left items are puzzle pieces you drag onto a row, where they snap to the right piece (swapping with the item that was there). Tapping a piece and then a row does the same. **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card (rate it with RemNote's own buttons) and names the rating it suggests: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (the prompt's forward card; its back side `⇄` is only a marker), so it is scheduled as one and rated with RemNote's usual buttons.
+In the queue the card is drawn as Articulate Rise draws its matching exercise: the right column stays put, one row each, and the left items are puzzle pieces you drag onto a row, where they snap to the right piece (swapping with the item that was there). Tapping a piece and then a row does the same. **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card and suggests a rating, highlighted on RemNote's answer button as for a Type in Answer card and applied by **Enter** (1–4 rate as usual): Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (the prompt's forward card; its back side `⇄` is only a marker), so it is scheduled as one and rated with RemNote's usual buttons.
 
 To make one: write the prompt, its children as `left :: right`, put the cursor in the prompt and run **Make Matching card**. The pairs' own cards are switched off (practice direction "none").
 
@@ -25,7 +25,7 @@ Classifique: Peso · Volume · Especializados   ← Sorting + Card Cluster
     …
 ```
 
-Each item keeps its own forward card and schedule. In the queue the item is a card to drag onto one of the groups (the distinct right sides, in the order they first appear), or tap a group. The card is revealed, the right group turns green, and the widget names the rating it suggests (Good if right, Again if not); rate with RemNote's own buttons, which act on the item on screen even inside the cluster. The exercise rem carries RemNote's **Card Cluster**, so its items come up together.
+Each item keeps its own forward card and schedule. In the queue the item is a card to drag onto one of the groups (the distinct right sides, in the order they first appear), or tap a group. The card is revealed, the right group turns green, and the suggested rating (Good if right, Again if not) is highlighted on RemNote's answer button and applied by **Enter**. The exercise rem carries RemNote's **Card Cluster**, so its items come up together.
 
 To make one: children as `item :: group`, cursor in the parent, **Make Sorting exercise**.
 

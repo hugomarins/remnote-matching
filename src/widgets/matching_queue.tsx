@@ -1,4 +1,4 @@
-import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
+import { QueueInteractionScore, renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import '../style.css';
 import { ExerciseHeader } from '../components/ExerciseHeader';
@@ -7,6 +7,7 @@ import { useCurrentCard } from '../lib/current_card';
 import { useReportHeight } from '../lib/frame_height';
 import { Board, boardLinks, Grade, grade, newBoard, place, shuffle, suggest } from '../lib/grading';
 import { readPairs } from '../lib/matching';
+import { useSuggestedScore } from '../lib/suggestion';
 import { t } from '../lib/i18n';
 
 /**
@@ -17,8 +18,9 @@ import { t } from '../lib/i18n';
  * mouse, pen and touch alike; tapping a piece and then a row does the same.
  *
  * "Check" grades the connected rows and reveals the answer, so RemNote's own
- * rating buttons appear; the widget names the rating it suggests. The exercise
- * is one card, so that rating schedules the whole exercise.
+ * rating buttons appear, the suggested one highlighted as for a Type in Answer
+ * card and applied by Enter (lib/suggestion.ts). The exercise is one card, so
+ * that rating schedules the whole exercise.
  */
 
 interface ViewPair {
@@ -27,6 +29,8 @@ interface ViewPair {
   rightHtml: string;
   rightText: string;
 }
+
+const SCORE_OF = { again: QueueInteractionScore.AGAIN, hard: QueueInteractionScore.HARD, good: QueueInteractionScore.GOOD };
 
 interface Drag {
   from: number;
@@ -71,6 +75,8 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
   useEffect(() => {
     if (revealed && !result && pairs && board) setResult(grade(pairs, boardLinks(board, rightOrder)));
   }, [revealed, pairs, board]);
+
+  useSuggestedScore(result ? SCORE_OF[suggest(result)] : undefined);
 
   if (!pairs || !board) return null;
   if (pairs.length < 2) return <div className="matching muted">{t('tooFew')}</div>;
@@ -206,7 +212,7 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
           </span>
           <span className="spacer" />
           <span className="suggestion">
-            {t('suggested')}: <b>{t(suggestion!)}</b>
+            {t('suggested')}: <b>{t(suggestion!)}</b> · {t('enterHint')}
           </span>
         </div>
       )}
