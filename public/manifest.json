@@ -1,0 +1,22 @@
+{
+  "manifestVersion": 1,
+  "id": "matching-cards",
+  "name": "Matching Cards",
+  "author": "Hugomarins",
+  "repoUrl": "https://github.com/hugomarins/remnote-matching",
+  "version": {
+    "major": 0,
+    "minor": 1,
+    "patch": 0
+  },
+  "theme": [],
+  "enableOnMobile": true,
+  "description": "Matching flashcards: pair each item with its match, practised and scheduled as one card. Other plugins can create them through a bridge.",
+  "requestNative": false,
+  "requiredScopes": [
+    {
+      "type": "All",
+      "level": "ReadCreateModifyDelete"
+    }
+  ]
+}

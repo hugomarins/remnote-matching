@@ -1,0 +1,2 @@
+/* RemNote loads a plugin's snippet.css into every window. Matching Cards has no
+   global styles; this file only answers the request that would otherwise 404. */

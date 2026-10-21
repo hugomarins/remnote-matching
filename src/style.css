@@ -1,0 +1,235 @@
+/* The widget's own page fills its frame (sized by lib/css.ts) and scrolls when
+   the exercise is taller than the card. */
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  overflow-y: auto;
+}
+
+.matching {
+  box-sizing: border-box;
+  padding: 8px 4px;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--rn-clr-content-primary);
+}
+.matching .muted {
+  color: var(--rn-clr-content-tertiary);
+  font-size: 12px;
+}
+.matching .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.matching .column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.matching .tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px 8px 22px;
+  border-radius: 8px;
+  border: 2px solid var(--rn-clr-border-primary);
+  background: var(--rn-clr-background-primary);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.matching .tile p {
+  margin: 0;
+}
+.matching .tile img {
+  max-width: 100%;
+}
+.matching .tile.selected {
+  border-color: var(--rn-clr-content-primary);
+  box-shadow: 0 0 0 2px var(--rn-clr-background-secondary);
+}
+.matching .tile .dot {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+}
+.matching .tile .mark {
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  font-size: 12px;
+}
+.matching .tile.ok {
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+}
+.matching .tile.ko {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+.matching .tile.missing {
+  border-color: #d97706;
+  border-style: dashed;
+}
+.matching .tile.ok .mark {
+  color: #16a34a;
+}
+.matching .tile.ko .mark,
+.matching .tile.missing .mark {
+  color: #dc2626;
+}
+.matching .answer {
+  margin: 4px 0 0 10px;
+  font-size: 13px;
+  color: #16a34a;
+}
+.matching .answer p {
+  display: inline;
+  margin: 0;
+}
+.matching .bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.matching .spacer {
+  flex: 1;
+}
+.matching .bar button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--rn-clr-border-primary);
+  background: var(--rn-clr-background-secondary);
+  color: var(--rn-clr-content-primary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.matching .bar button.primary {
+  background: var(--rn-clr-blue, #1f6feb);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+.matching .bar button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 480px) {
+  .matching {
+    font-size: 14px;
+  }
+  .matching .grid {
+    gap: 6px;
+  }
+  .matching .tile {
+    padding: 6px 8px 6px 20px;
+  }
+}
+
+/* Sorting (widgets/sorting_queue.tsx): the item card above, the piles below, as in Rise. */
+.sorting .stage {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 18px;
+}
+.sorting .item {
+  position: relative;
+  min-width: 180px;
+  max-width: 320px;
+  padding: 22px 20px 26px;
+  border-radius: 6px;
+  border-top: 3px solid var(--rn-clr-blue, #1f6feb);
+  background: var(--rn-clr-background-primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  font-weight: 600;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  z-index: 2;
+}
+.sorting .item p {
+  margin: 0;
+}
+.sorting .item.dragging {
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.sorting .item .grip {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--rn-clr-content-tertiary);
+}
+.sorting .item.ok {
+  border-top-color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  cursor: default;
+}
+.sorting .item.ko {
+  border-top-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  cursor: default;
+}
+.sorting .item.revealed {
+  cursor: default;
+}
+.sorting .piles {
+  display: grid;
+  gap: 12px;
+}
+.sorting .pile {
+  min-height: 96px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1.5px dashed var(--rn-clr-content-tertiary);
+  background: var(--rn-clr-background-secondary);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.sorting .pile p {
+  margin: 0;
+}
+.sorting .pile.over {
+  border-style: solid;
+  border-color: var(--rn-clr-blue, #1f6feb);
+  background: rgba(31, 111, 235, 0.1);
+}
+.sorting .pile.ok {
+  border-style: solid;
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+}
+.sorting .pile.ko {
+  border-style: solid;
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+.sorting .pile.dim {
+  opacity: 0.5;
+}
+@media (max-width: 480px) {
+  .sorting .pile {
+    min-height: 64px;
+    font-size: 13px;
+  }
+}
