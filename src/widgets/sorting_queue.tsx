@@ -1,6 +1,7 @@
 import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useRef, useState } from 'react';
 import '../style.css';
+import { ExerciseHeader } from '../components/ExerciseHeader';
 import { SORTING_WIDGET } from '../lib/consts';
 import { useCurrentCard } from '../lib/current_card';
 import { useReportHeight } from '../lib/frame_height';
@@ -21,6 +22,8 @@ import { readSortingItem } from '../lib/sorting';
  */
 
 interface View {
+  /** The exercise rem ("Classifique: …"), the item's parent. */
+  exerciseId: string;
   itemHtml: string;
   pileHtml: string[];
   answer: number;
@@ -37,8 +40,9 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
     (async () => {
       const rem = await plugin.rem.findOne(remId);
       const v = rem && (await readSortingItem(rem));
-      if (!v) return;
+      if (!v || !rem.parent) return;
       setView({
+        exerciseId: rem.parent,
         itemHtml: await plugin.richText.toHTML(v.item),
         pileHtml: await Promise.all(v.piles.map((p) => plugin.richText.toHTML(p))),
         answer: v.answer,
@@ -86,6 +90,7 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
 
   return (
     <div className="matching sorting">
+      <ExerciseHeader remId={view.exerciseId} />
       <div className="stage">
         <div
           className={`item ${drag ? 'dragging' : ''} ${done ? (chosen === null ? 'revealed' : right ? 'ok' : 'ko') : ''}`}

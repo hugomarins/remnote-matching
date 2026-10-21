@@ -1,6 +1,7 @@
 import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import '../style.css';
+import { ExerciseHeader } from '../components/ExerciseHeader';
 import { MATCHING_WIDGET } from '../lib/consts';
 import { useCurrentCard } from '../lib/current_card';
 import { useReportHeight } from '../lib/frame_height';
@@ -150,6 +151,7 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
 
   return (
     <div className="matching">
+      <ExerciseHeader remId={remId} />
       <div className="board">
         {rightOrder.map((rightId, row) => {
           const leftId = board.order[row];
