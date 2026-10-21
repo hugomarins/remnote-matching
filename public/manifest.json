@@ -11,7 +11,7 @@
   },
   "theme": [],
   "enableOnMobile": true,
-  "description": "Matching flashcards: pair each item with its match, practised and scheduled as one card. Other plugins can create them through a bridge.",
+  "description": "Interactive Matching and Sorting flashcards: drag items onto their matches (one card per exercise) or into their groups (one card per item). Other plugins can create them through a bridge.",
   "requestNative": false,
   "requiredScopes": [
     {
