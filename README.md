@@ -11,7 +11,7 @@ Atenção especial deve ser dada aos seguintes aspectos:   ← Matching
     …
 ```
 
-In the queue the card shows the left items and the right items, shuffled. Tap an item on the left, then its match on the right (tap a linked item again to undo). **Check** marks each link ✔ / ✘, shows the right answer under each mistake, and suggests a rating: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (a Multi-Line card whose answer lines are the pairs), so it is scheduled as one.
+In the queue the card shows the left items and the right items, shuffled. Tap an item on the left, then its match on the right (tap a linked item again to undo). **Check** marks each link ✔ / ✘, shows the right answer under each mistake, reveals the card (rate it with RemNote's own buttons) and names the rating it suggests: Good with no mistake, Hard with one mistake in four or more pairs, Again otherwise. The whole exercise is one card (a Multi-Line card whose answer lines are the pairs), so it is scheduled as one.
 
 To make one: write the prompt, its children as `left :: right`, put the cursor in the prompt and run **Make Matching card**. The pairs' own cards are switched off (practice direction "none").
 
@@ -25,7 +25,7 @@ Classifique: Peso · Volume · Especializados   ← Sorting + Card Cluster
     …
 ```
 
-Each item keeps its own forward card and schedule. In the queue the item is a card to drag onto one of the groups (the distinct right sides, in the order they first appear), or tap a group. The right group turns green and a rating is suggested (Good if right, Again if not). The exercise rem carries RemNote's **Card Cluster**, so its items come up together.
+Each item keeps its own forward card and schedule. In the queue the item is a card to drag onto one of the groups (the distinct right sides, in the order they first appear), or tap a group. The card is revealed, the right group turns green, and the widget names the rating it suggests (Good if right, Again if not); rate with RemNote's own buttons, which act on the item on screen even inside the cluster. The exercise rem carries RemNote's **Card Cluster**, so its items come up together.
 
 To make one: children as `item :: group`, cursor in the parent, **Make Sorting exercise**.
 

@@ -1,16 +1,18 @@
-import { AppEvents, QueueInteractionScore, renderWidget, usePlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useMemo, useState } from 'react';
 import '../style.css';
-import { Grade, grade, Links, shuffle, suggest, Suggestion } from '../lib/grading';
+import { useCurrentCard } from '../lib/current_card';
+import { Grade, grade, Links, shuffle, suggest } from '../lib/grading';
 import { readPairs } from '../lib/matching';
 import { t } from '../lib/i18n';
 
 /**
  * Drawn on the card of every rem with the Matching powerup. The learner taps
  * an item on the left, then its match on the right (taps work the same with a
- * mouse and on a phone, unlike drag and drop). "Check" grades the links,
- * reveals the answer and suggests a rating; the card is one card, so the
- * rating schedules the whole exercise.
+ * mouse and on a phone, unlike drag and drop). "Check" grades the links and
+ * reveals the answer, so RemNote's own rating buttons appear; the widget names
+ * the rating it suggests. The exercise is one card, so that rating schedules
+ * the whole exercise.
  */
 
 interface ViewPair {
@@ -22,29 +24,16 @@ interface ViewPair {
 
 const COLORS = ['#2563eb', '#d97706', '#7c3aed', '#059669', '#db2777', '#0891b2', '#65a30d', '#dc2626', '#4f46e5', '#ca8a04'];
 
-const SCORES: { key: Suggestion | 'easy'; score: QueueInteractionScore }[] = [
-  { key: 'again', score: QueueInteractionScore.AGAIN },
-  { key: 'hard', score: QueueInteractionScore.HARD },
-  { key: 'good', score: QueueInteractionScore.GOOD },
-  { key: 'easy', score: QueueInteractionScore.EASY },
-];
-
-function MatchingQueue() {
+function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?: string; revealed: boolean }) {
   const plugin = usePlugin();
-  const [ctx, setCtx] = useState<{ remId: string; cardId?: string; revealed: boolean } | null>(null);
   const [pairs, setPairs] = useState<ViewPair[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [links, setLinks] = useState<Links>({});
   const [result, setResult] = useState<Grade | null>(null);
-  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const context = await plugin.widget.getWidgetContext<WidgetLocation.Flashcard>();
-      if (!context?.remId) return;
-      setCtx(context);
-      setRevealed(!!context.revealed);
-      const rem = await plugin.rem.findOne(context.remId);
+      const rem = await plugin.rem.findOne(remId);
       if (!rem) return;
       const view: ViewPair[] = [];
       for (const p of await readPairs(rem)) {
@@ -57,22 +46,15 @@ function MatchingQueue() {
       }
       setPairs(view);
     })();
-  }, []);
-
-  // RemNote's own "show answer" (space bar, the button) reveals too.
-  useEffect(() => {
-    const onReveal = () => setRevealed(true);
-    plugin.event.addListener(AppEvents.RevealAnswer, undefined, onReveal);
-    return () => plugin.event.removeListener(AppEvents.RevealAnswer, undefined, onReveal);
-  }, []);
+  }, [remId]);
 
   // A new order every day, stable while the card is on screen.
   const rightOrder = useMemo(
-    () => (pairs ? shuffle(pairs.map((p) => p.id), `${ctx?.cardId ?? ctx?.remId}:${new Date().toDateString()}`) : []),
-    [pairs, ctx]
+    () => (pairs ? shuffle(pairs.map((p) => p.id), `${cardId ?? remId}:${new Date().toDateString()}`) : []),
+    [pairs]
   );
 
-  // Revealed without "Check": grade whatever was linked, so the answer shows.
+  // Revealed by RemNote (space bar, its button) without "Check": grade whatever was linked, so the answer shows.
   useEffect(() => {
     if (revealed && !result && pairs) setResult(grade(pairs, links));
   }, [revealed, pairs]);
@@ -181,20 +163,20 @@ function MatchingQueue() {
             <b>{t('score', result!.correct.length, pairs.length)}</b>
           </span>
           <span className="spacer" />
-          {SCORES.map(({ key, score }) => (
-            <button
-              key={key}
-              className={key === suggestion ? 'primary' : ''}
-              title={key === suggestion ? t('suggested') : undefined}
-              onClick={() => plugin.queue.rateCurrentCard(score)}
-            >
-              {t(key)}
-            </button>
-          ))}
+          <span className="suggestion">
+            {t('suggested')}: <b>{t(suggestion!)}</b>
+          </span>
         </div>
       )}
     </div>
   );
+}
+
+function MatchingQueue() {
+  const card = useCurrentCard();
+  if (!card) return null;
+  // A fresh exercise (links and all) for every card the queue shows.
+  return <MatchingExercise key={card.cardId ?? card.remId} remId={card.remId} cardId={card.cardId} revealed={card.revealed} />;
 }
 
 renderWidget(MatchingQueue);

@@ -108,6 +108,10 @@ body {
 .matching .spacer {
   flex: 1;
 }
+.matching .suggestion {
+  font-size: 13px;
+  color: var(--rn-clr-content-secondary);
+}
 .matching .bar button {
   padding: 6px 12px;
   border-radius: 6px;

@@ -1,15 +1,21 @@
-import { AppEvents, QueueInteractionScore, renderWidget, usePlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useRef, useState } from 'react';
 import '../style.css';
+import { useCurrentCard } from '../lib/current_card';
 import { t } from '../lib/i18n';
 import { readSortingItem } from '../lib/sorting';
 
 /**
  * Drawn on the card of every item of a sorting exercise, Rise style: the item
  * in a card at the top, the piles as boxes below. Drag the item onto a pile
- * (pointer events: mouse, pen and touch alike) or tap a pile. The answer is
- * revealed and a rating suggested (Good if right, Again if not); each item
- * keeps its own schedule.
+ * (pointer events: mouse, pen and touch alike) or tap a pile. That reveals
+ * the answer, so RemNote's own rating buttons appear; the widget names the
+ * rating it suggests (Good if right, Again if not). Each item keeps its own
+ * schedule.
+ *
+ * The rating is left to RemNote's buttons on purpose: inside a Card Cluster,
+ * plugin.queue.rateCurrentCard() acts on the cluster's anchor card, not
+ * necessarily on the item on screen.
  */
 
 interface View {
@@ -18,27 +24,16 @@ interface View {
   answer: number;
 }
 
-const SCORES = [
-  { key: 'again', score: QueueInteractionScore.AGAIN },
-  { key: 'hard', score: QueueInteractionScore.HARD },
-  { key: 'good', score: QueueInteractionScore.GOOD },
-  { key: 'easy', score: QueueInteractionScore.EASY },
-] as const;
-
-function SortingQueue() {
+function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) {
   const plugin = usePlugin();
   const [view, setView] = useState<View | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [drag, setDrag] = useState<{ dx: number; dy: number; over: number | null } | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     (async () => {
-      const ctx = await plugin.widget.getWidgetContext<WidgetLocation.Flashcard>();
-      if (!ctx?.remId) return;
-      setRevealed(!!ctx.revealed);
-      const rem = await plugin.rem.findOne(ctx.remId);
+      const rem = await plugin.rem.findOne(remId);
       const v = rem && (await readSortingItem(rem));
       if (!v) return;
       setView({
@@ -47,13 +42,7 @@ function SortingQueue() {
         answer: v.answer,
       });
     })();
-  }, []);
-
-  useEffect(() => {
-    const onReveal = () => setRevealed(true);
-    plugin.event.addListener(AppEvents.RevealAnswer, undefined, onReveal);
-    return () => plugin.event.removeListener(AppEvents.RevealAnswer, undefined, onReveal);
-  }, []);
+  }, [remId]);
 
   if (!view) return null;
   const done = chosen !== null || revealed;
@@ -92,7 +81,6 @@ function SortingQueue() {
   };
 
   const right = chosen === view.answer;
-  const suggestion = chosen === null ? null : right ? 'good' : 'again';
 
   return (
     <div className="matching sorting">
@@ -124,28 +112,28 @@ function SortingQueue() {
         })}
       </div>
 
-      {!done ? (
-        <div className="bar">
+      <div className="bar">
+        {!done ? (
           <span className="muted">{t('dragHint')}</span>
-        </div>
-      ) : (
-        <div className="bar">
-          {chosen !== null && <b>{right ? t('right') : t('wrong')}</b>}
-          <span className="spacer" />
-          {SCORES.map(({ key, score }) => (
-            <button
-              key={key}
-              className={key === suggestion ? 'primary' : ''}
-              title={key === suggestion ? t('suggested') : undefined}
-              onClick={() => plugin.queue.rateCurrentCard(score)}
-            >
-              {t(key)}
-            </button>
-          ))}
-        </div>
-      )}
+        ) : chosen === null ? null : (
+          <>
+            <b>{right ? t('right') : t('wrong')}</b>
+            <span className="spacer" />
+            <span className="suggestion">
+              {t('suggested')}: <b>{t(right ? 'good' : 'again')}</b>
+            </span>
+          </>
+        )}
+      </div>
     </div>
   );
+}
+
+function SortingQueue() {
+  const card = useCurrentCard();
+  if (!card) return null;
+  // A fresh item (state and all) for every card the queue shows.
+  return <SortingItem key={card.cardId ?? card.remId} remId={card.remId} revealed={card.revealed} />;
 }
 
 renderWidget(SortingQueue);
