@@ -81,15 +81,21 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
     setSelected(null);
   };
 
-  // Every element under the pointer, minus the dragged piece: it is the topmost
-  // one, and it still sits inside the row it came from.
-  const rowAt = (x: number, y: number, dragged: Element): number | null => {
-    const el = document
-      .elementsFromPoint(x, y)
-      .filter((e) => !dragged.contains(e))
-      .map((e) => e.closest('[data-row]') as HTMLElement | null)
-      .find((e) => !!e);
-    return el ? Number(el.dataset.row) : null;
+  // The row a drop would go to. Every element under the pointer, minus the
+  // dragged piece (the topmost one, still inside the row it came from). A right
+  // piece targets its row, the piece's own row included (connect in place);
+  // anywhere else in a row targets it only if it is another row, so the drag
+  // does not light up its own row the moment it starts.
+  const rowAt = (x: number, y: number, dragged: Element, from: number): number | null => {
+    const under = document.elementsFromPoint(x, y).filter((e) => !dragged.contains(e));
+    const rowOf = (e: Element | null | undefined) => {
+      const el = e?.closest('[data-row]') as HTMLElement | null | undefined;
+      return el ? Number(el.dataset.row) : null;
+    };
+    const right = under.find((e) => e.closest('.piece.right'));
+    if (right) return rowOf(right);
+    const row = rowOf(under.find((e) => e.closest('[data-row]')));
+    return row !== from ? row : null;
   };
 
   const onPointerDown = (row: number) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -103,12 +109,12 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
     const dx = e.clientX - start.current.x;
     const dy = e.clientY - start.current.y;
     if (Math.abs(dx) + Math.abs(dy) > 6) start.current.moved = true;
-    setDrag({ ...drag, dx, dy, over: rowAt(e.clientX, e.clientY, e.currentTarget) });
+    setDrag({ ...drag, dx, dy, over: rowAt(e.clientX, e.clientY, e.currentTarget, drag.from) });
   };
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!start.current || !drag) return;
     const moved = start.current.moved;
-    const over = rowAt(e.clientX, e.clientY, e.currentTarget);
+    const over = rowAt(e.clientX, e.clientY, e.currentTarget, drag.from);
     start.current = null;
     setDrag(null);
     if (!moved) {
@@ -166,7 +172,7 @@ function MatchingExercise({ remId, cardId, revealed }: { remId: string; cardId?:
                 {(st === 'ko' || st === 'missing') && <span className="mark">✘</span>}
                 <span className="content" dangerouslySetInnerHTML={{ __html: byId.get(leftId)!.leftHtml }} />
               </div>
-              <div className={`piece right ${drag?.over === row && drag.from !== row ? 'target' : ''}`} onClick={() => tapRow(row)}>
+              <div className={`piece right ${drag?.over === row ? 'target' : ''}`} onClick={() => tapRow(row)}>
                 <span className="content" dangerouslySetInnerHTML={{ __html: byId.get(rightId)!.rightHtml }} />
               </div>
               {done && st !== 'ok' && (
