@@ -75,7 +75,13 @@ if (isProd) {
 } else {
   config.devServer = {
     port: 8082, // 8080: Incremental RemNote, 8081: Sierra Pilots Importer
-    hot: true,
+    // No live-reload client: RemNote runs widgets in sandboxed iframes (Origin: null),
+    // which the dev server's WebSocket check rejects, so the client only ever looped
+    // "Invalid Host/Origin header" / "Trying to reconnect..." in the console.
+    hot: false,
+    liveReload: false,
+    client: false,
+    webSocketServer: false,
     compress: true,
     watchFiles: ['src/*'],
     headers: {
