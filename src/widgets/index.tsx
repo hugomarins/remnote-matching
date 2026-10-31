@@ -1,4 +1,4 @@
-import { declareIndexPlugin, PluginRem, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { declareIndexPlugin, PluginRem, ReactRNPlugin, SpecialPluginCallback, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import { registerBridge } from '../lib/bridge';
 import {
@@ -34,6 +34,10 @@ async function onActivate(plugin: ReactRNPlugin) {
     description: 'An item of a Sorting exercise (set by the plugin).',
     options: { slots: [] },
   });
+
+  // RemNote asks every plugin with a Flashcard widget for the next card. This one never supplies
+  // cards, but without a callback the SDK logs "GetNextCard ... was not registered" on each card.
+  plugin.app.registerCallback<SpecialPluginCallback.GetNextCard>(SpecialPluginCallback.GetNextCard, async () => null);
 
   await plugin.app.registerCSS(CSS_ID, CSS);
   registerFrameHeights(plugin);
