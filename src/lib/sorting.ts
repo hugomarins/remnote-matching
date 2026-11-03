@@ -1,6 +1,8 @@
 import type { PluginRem, RichTextInterface } from '@remnote/plugin-sdk';
 import { CARD_CLUSTER_POWERUP, MIN_PILES, SORTING_ITEM_POWERUP, SORTING_POWERUP } from './consts';
-import { readPairs } from './matching';
+import { isMatching, readPairs, separateMatching } from './matching';
+
+export const isSorting = (rem: PluginRem) => rem.hasPowerup(SORTING_POWERUP);
 
 /**
  * A sorting exercise keeps one card per item, each scheduled on its own:
@@ -52,6 +54,9 @@ export async function makeSorting(rem: PluginRem): Promise<{ items: number; pile
   if (piles < MIN_PILES) {
     throw new Error(`a sorting exercise needs children written as "item :: pile" with at least ${MIN_PILES} piles (found ${piles})`);
   }
+  // A rem is one kind of exercise: a Matching card loses its marker card (→ ⇄) and its
+  // pairs get their own forward cards back before they become items.
+  if (await isMatching(rem)) await separateMatching(rem);
   const isItem = new Set(pairs.map((p) => p.remId));
   for (const child of await rem.getChildrenRem()) {
     if (!isItem.has(child._id)) continue;

@@ -73,9 +73,9 @@ Above each exercise, the plugin shows what RemNote would show above the card: th
 
 | Command | On the rem with the cursor |
 |---|---|
-| **Make Matching card** | Turns its `left :: right` children into one Matching card. Run it again to repair one. |
-| **Make Sorting exercise** | Turns its `item :: group` children into a Sorting exercise. |
-| **Separate Matching/Sorting into plain cards** | Undoes either: every pair or item is a forward card again, and the tags (and the `⇄` back side) are removed. |
+| **Make Matching card** | Turns its `left :: right` children into one Matching card. Run it again to repair one. On a Sorting exercise, it undoes the Sorting first. |
+| **Make Sorting exercise** | Turns its `item :: group` children into a Sorting exercise. On a Matching card, it undoes the Matching first (the `⇄` back side goes, the pairs get their forward cards back). |
+| **Separate Matching/Sorting into plain cards** | Undoes either (or both): every pair or item is a forward card again, and the tags (and the `⇄` back side) are removed. |
 
 ## Good to know
 

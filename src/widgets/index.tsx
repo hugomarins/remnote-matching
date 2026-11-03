@@ -85,9 +85,11 @@ async function onActivate(plugin: ReactRNPlugin) {
     description: 'Undoes "Make Matching card" or "Make Sorting exercise" on the focused rem.',
     action: () =>
       onFocused(async (rem) => {
-        if (await rem.hasPowerup(MATCHING_POWERUP)) return `${await separateMatching(rem)} pairs are forward cards again.`;
-        if (await rem.hasPowerup(SORTING_POWERUP)) return `${await separateSorting(rem)} items are plain cards again.`;
-        return 'The focused rem is neither a Matching card nor a Sorting exercise.';
+        // Both, for a rem made both by an earlier version.
+        const done: string[] = [];
+        if (await rem.hasPowerup(MATCHING_POWERUP)) done.push(`${await separateMatching(rem)} pairs are forward cards again.`);
+        if (await rem.hasPowerup(SORTING_POWERUP)) done.push(`${await separateSorting(rem)} items are plain cards again.`);
+        return done.join(' ') || 'The focused rem is neither a Matching card nor a Sorting exercise.';
       }),
   });
 

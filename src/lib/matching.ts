@@ -1,6 +1,6 @@
 import { BuiltInPowerupCodes, PluginRem, RNPlugin, RichTextInterface } from '@remnote/plugin-sdk';
 import { MATCHING_POWERUP, MIN_PAIRS } from './consts';
-import { makeSorting } from './sorting';
+import { isSorting, makeSorting, separateSorting } from './sorting';
 
 /**
  * A Matching card is an ordinary rem tree, so it stays readable and editable
@@ -54,6 +54,8 @@ export async function makeMatching(rem: PluginRem): Promise<number> {
   if (hasText(rem.backText) && !isMarker(rem.backText)) {
     throw new Error('the prompt has a back side of its own; remove it first');
   }
+  // A rem is one kind of exercise: a Sorting exercise becomes a Matching card.
+  if (await isSorting(rem)) await separateSorting(rem);
   const isPair = new Set(pairs.map((p) => p.remId));
   for (const child of await rem.getChildrenRem()) {
     if (!isPair.has(child._id)) continue;
