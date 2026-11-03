@@ -12,7 +12,7 @@ import {
 import { CSS, CSS_ID } from '../lib/css';
 import { registerFrameHeights } from '../lib/frame_height';
 import { registerSuggestionHighlight } from '../lib/suggestion';
-import { makeMatching, migrateMatchingCards, separateMatching } from '../lib/matching';
+import { dropMarkerCard, hasMarkerCard, makeMatching, migrateMatchingCards, separateMatching } from '../lib/matching';
 import { makeSorting, separateSorting } from '../lib/sorting';
 
 async function onActivate(plugin: ReactRNPlugin) {
@@ -97,6 +97,10 @@ async function onActivate(plugin: ReactRNPlugin) {
         const done: string[] = [];
         if (await rem.hasPowerup(MATCHING_POWERUP)) done.push(`${await separateMatching(rem)} pairs are forward cards again.`);
         if (await rem.hasPowerup(SORTING_POWERUP)) done.push(`${await separateSorting(rem)} items are plain cards again.`);
+        if (!done.length && (await hasMarkerCard(rem))) {
+          await dropMarkerCard(rem);
+          done.push('The leftover ⇄ card of an earlier Matching card is off.');
+        }
         return done.join(' ') || 'The focused rem is neither a Matching card nor a Sorting exercise.';
       }),
   });

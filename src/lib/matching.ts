@@ -74,6 +74,34 @@ export const isMarker = (rt: RichTextInterface | undefined) =>
   !!rt && rt.map((el) => (typeof el === 'string' ? el : (el as any).text ?? '')).join('').trim() === MATCHING_BACK;
 
 /**
+ * Whether the prompt still carries what makeMatching gave it: the ⇄ marker, or
+ * the empty back side a later cleanup left in its place. A rem with no back
+ * side at all has `backText` undefined.
+ */
+export async function hasMarkerCard(rem: PluginRem): Promise<boolean> {
+  if (isMarker(rem.backText)) return true;
+  if (hasText(rem.backText)) return false;
+  if (rem.backText !== undefined) return true;
+  // An empty back side may also read as undefined: its forward card gives it away.
+  return (await rem.getCards()).some((card) => card.type === 'forward');
+}
+
+/**
+ * Takes away the prompt's marker card. A plugin cannot remove a back side: the
+ * bridge's setBackText requires rich text (undefined is rejected with
+ * "backText parameter: Required") and stores it as is, so the most it can do
+ * is empty it, and an empty back side still makes a forward card. Practice
+ * direction "none" is what stops that card; it does not touch clozes
+ * (incremental-everything findings/CARD_STATE_REFERENCE.md). The empty "→"
+ * stays visible in the editor until deleted by hand.
+ */
+export async function dropMarkerCard(rem: PluginRem): Promise<void> {
+  if (!(await hasMarkerCard(rem))) return;
+  if (isMarker(rem.backText)) await rem.setBackText([]);
+  await rem.setPracticeDirection('none');
+}
+
+/**
  * Brings Matching cards made as Multi-Line cards (the first version) to the
  * current form. Run at startup; a card already current is left alone.
  */
@@ -101,9 +129,8 @@ export async function separateMatching(rem: PluginRem): Promise<number> {
     await child.setPracticeDirection('forward');
   }
   // The marker goes before the tag, so a failure here leaves a rem that is still
-  // recognisably a Matching card. setBackText(undefined) is rejected at runtime
-  // ("backText parameter: Required"); an empty back side is how it is cleared.
-  if (isMarker(rem.backText)) await rem.setBackText([]);
+  // recognisably a Matching card.
+  await dropMarkerCard(rem);
   await rem.removePowerup(MATCHING_POWERUP);
   await rem.removePowerup(BuiltInPowerupCodes.MultiLineCard);
   return pairs.length;
