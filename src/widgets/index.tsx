@@ -53,12 +53,20 @@ async function onActivate(plugin: ReactRNPlugin) {
     });
   }
 
-  const onFocused = async (action: (rem: PluginRem) => Promise<string>) => {
+  // Every toast is also logged: toasts replace one another, the console keeps them.
+  const onFocused = async (command: string, action: (rem: PluginRem) => Promise<string>) => {
     const rem = await plugin.focus.getFocusedRem();
-    if (!rem) return void (await plugin.app.toast('Put the cursor in the rem that holds the exercise.'));
+    if (!rem) {
+      const message = 'Put the cursor in the rem that holds the exercise.';
+      console.warn(`[Matching Cards] ${command}: ${message}`);
+      return void (await plugin.app.toast(message));
+    }
     try {
-      await plugin.app.toast(await action(rem));
+      const message = await action(rem);
+      console.log(`[Matching Cards] ${command} on ${rem._id}: ${message}`);
+      await plugin.app.toast(message);
     } catch (e: any) {
+      console.error(`[Matching Cards] ${command} on ${rem._id} failed:`, e);
       await plugin.app.toast(e?.message ?? String(e));
     }
   };
@@ -67,14 +75,14 @@ async function onActivate(plugin: ReactRNPlugin) {
     id: 'make-matching',
     name: 'Make Matching card',
     description: 'The focused rem becomes one Matching card; its children ("left :: right") are the pairs.',
-    action: () => onFocused(async (rem) => `Matching card with ${await makeMatching(rem)} pairs.`),
+    action: () => onFocused('Make Matching card', async (rem) => `Matching card with ${await makeMatching(rem)} pairs.`),
   });
   await plugin.app.registerCommand({
     id: 'make-sorting',
     name: 'Make Sorting exercise',
     description: 'The focused rem becomes a Sorting exercise; its children ("item :: group") keep one card each.',
     action: () =>
-      onFocused(async (rem) => {
+      onFocused('Make Sorting exercise', async (rem) => {
         const { items, piles } = await makeSorting(rem);
         return `Sorting exercise: ${items} items in ${piles} groups.`;
       }),
@@ -84,7 +92,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     name: 'Separate Matching/Sorting into plain cards',
     description: 'Undoes "Make Matching card" or "Make Sorting exercise" on the focused rem.',
     action: () =>
-      onFocused(async (rem) => {
+      onFocused('Separate', async (rem) => {
         // Both, for a rem made both by an earlier version.
         const done: string[] = [];
         if (await rem.hasPowerup(MATCHING_POWERUP)) done.push(`${await separateMatching(rem)} pairs are forward cards again.`);

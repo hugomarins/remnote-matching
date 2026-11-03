@@ -1,6 +1,6 @@
 import type { PluginRem, RichTextInterface } from '@remnote/plugin-sdk';
 import { CARD_CLUSTER_POWERUP, MIN_PILES, SORTING_ITEM_POWERUP, SORTING_POWERUP } from './consts';
-import { isMatching, readPairs, separateMatching } from './matching';
+import { isMarker, isMatching, readPairs, separateMatching } from './matching';
 
 export const isSorting = (rem: PluginRem) => rem.hasPowerup(SORTING_POWERUP);
 
@@ -56,7 +56,8 @@ export async function makeSorting(rem: PluginRem): Promise<{ items: number; pile
   }
   // A rem is one kind of exercise: a Matching card loses its marker card (→ ⇄) and its
   // pairs get their own forward cards back before they become items.
-  if (await isMatching(rem)) await separateMatching(rem);
+  // The marker alone also counts: an earlier version removed the tag but failed to clear it.
+  if ((await isMatching(rem)) || isMarker(rem.backText)) await separateMatching(rem);
   const isItem = new Set(pairs.map((p) => p.remId));
   for (const child of await rem.getChildrenRem()) {
     if (!isItem.has(child._id)) continue;

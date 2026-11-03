@@ -70,7 +70,7 @@ export async function makeMatching(rem: PluginRem): Promise<number> {
   return pairs.length;
 }
 
-const isMarker = (rt: RichTextInterface | undefined) =>
+export const isMarker = (rt: RichTextInterface | undefined) =>
   !!rt && rt.map((el) => (typeof el === 'string' ? el : (el as any).text ?? '')).join('').trim() === MATCHING_BACK;
 
 /**
@@ -100,9 +100,12 @@ export async function separateMatching(rem: PluginRem): Promise<number> {
     await child.setIsCardItem(false);
     await child.setPracticeDirection('forward');
   }
+  // The marker goes before the tag, so a failure here leaves a rem that is still
+  // recognisably a Matching card. setBackText(undefined) is rejected at runtime
+  // ("backText parameter: Required"); an empty back side is how it is cleared.
+  if (isMarker(rem.backText)) await rem.setBackText([]);
   await rem.removePowerup(MATCHING_POWERUP);
   await rem.removePowerup(BuiltInPowerupCodes.MultiLineCard);
-  if (isMarker(rem.backText)) await rem.setBackText(undefined);
   return pairs.length;
 }
 
