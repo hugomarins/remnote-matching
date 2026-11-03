@@ -35,7 +35,7 @@ import { useEffect } from 'react';
 const PLUGIN_ID = 'matching-cards';
 const KEY = 'matching-cards.suggested-score';
 
-/** RemNote's rating keys: 1 Forgot, 2 Hard, 3 Easy (Good), 4 Instant (Easy). */
+/** RemNote's rating keys: 1 Forgot, 2 Hard, 3 Good, 4 Easy. */
 const KEY_SCORES: Record<string, QueueInteractionScore> = {
   '1': QueueInteractionScore.AGAIN,
   '2': QueueInteractionScore.HARD,

@@ -34,7 +34,7 @@ Put the cursor in the prompt and run **Make Matching card** (command palette, `C
 
 - **Drag** a piece onto the row of its match: it snaps into place and both stripes turn dark blue. The piece that was in that row moves to the spot you dragged from. A connected piece can be dragged again.
 - **Or tap** a piece, then the row of its match.
-- **Check** grades the connected rows: green ✔ right, red ✘ wrong, orange ✘ left unconnected, with the right item named under each mistake. The card is revealed and a rating is suggested: **Easy** with no mistake, **Hard** with one mistake in four or more pairs, **Forgot** otherwise.
+- **Check** grades the connected rows: green ✔ right, red ✘ wrong, orange ✘ left unconnected, with the right item named under each mistake. The card is revealed and a rating is suggested: **Good** with no mistake, **Hard** with one mistake in four or more pairs, **Forgot** otherwise.
 
 ## Sorting: one card per item, practised together
 
@@ -53,7 +53,7 @@ Put the cursor in the exercise and run **Make Sorting exercise**. The exercise g
 **In the queue**, each item is a card above the groups:
 
 - **Drag** the card onto its group, **or tap** the group.
-- The right group turns green (and your choice red, if it was wrong). The card is revealed and a rating is suggested: **Easy** if right, **Forgot** if not.
+- The right group turns green (and your choice red, if it was wrong). The card is revealed and a rating is suggested: **Good** if right, **Forgot** if not.
 
 ## Rating
 
@@ -62,7 +62,7 @@ After **Check** (Matching) or a drop (Sorting), the suggested rating is highligh
 | Key | Does |
 |---|---|
 | **Enter** | Rates with the suggestion |
-| **1 – 4** | Forgot · Hard · Easy · Instant, as usual |
+| **1 – 4** | Forgot · Hard · Good · Easy, as usual |
 | **Enter** or **Space**, after a Forgot | Goes to the next card, when RemNote shows its AI Explanation with "Next card" |
 
 You can also click any answer button: the suggestion is only a suggestion. If you reveal the answer before checking (Space, or **Reveal Answer**), what you had connected is graded and the answer is shown.
