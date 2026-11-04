@@ -24,13 +24,23 @@ export interface SortingView {
   piles: RichTextInterface[];
 }
 
-const key = (rt: RichTextInterface) =>
-  rt
-    .map((el) => (typeof el === 'string' ? el : (el as any).text ?? ''))
-    .join('')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+/**
+ * A rich-text element's identity for grouping. A Rem reference (`i: 'q'`) has no
+ * `text` of its own: it is keyed by the rem it points to, so "→ [[First phase]]"
+ * and "→ [[Second phase]]" are different piles, not two empty strings. Other
+ * elements without text (images, audio) fall back to their source.
+ */
+const elementKey = (el: RichTextInterface[number]): string => {
+  if (typeof el === 'string') return el.toLowerCase();
+  const e = el as any;
+  // Rem ids are case-sensitive: only text is folded to lower case.
+  if (e.i === 'q' && e._id) return ` \u0000ref:${e._id}\u0000 `;
+  if (typeof e.text === 'string') return e.text.toLowerCase();
+  if (e.url) return ` \u0000${e.i}:${e.url}\u0000 `;
+  return '';
+};
+
+const key = (rt: RichTextInterface) => rt.map(elementKey).join('').replace(/\s+/g, ' ').trim();
 
 /** The distinct back sides of the items, in order of first appearance. */
 export function pilesOf(backs: RichTextInterface[]): RichTextInterface[] {
