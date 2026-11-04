@@ -40,9 +40,15 @@ const MAX_KEYED_PILES = 9;
  * stolen key calls preventDefault and stopPropagation and emits StealKeyEvent
  * with the plugin id as the listener key and `{ key }` as data. The keys are
  * stolen app-wide, so they are released as soon as the item is answered (then
- * 1–4 are RemNote's rating keys again) or the widget goes away. When the
- * focus is in this frame instead, the host never sees the key: a keydown
- * listener here covers that case.
+ * 1–4 are RemNote's rating keys again) or the widget goes away.
+ *
+ * The numeric keypad can't be stolen: the host matches stolen keys with
+ * is-hotkey by keyCode, "1" is 49 (the top row), the keypad's 1 is 97, and no
+ * hotkey string yields 97. So, as lib/suggestion.ts does after the reveal,
+ * the frame takes the focus while the item waits for an answer: its own keys
+ * never reach the host, and a keydown listener here reads both rows by
+ * KeyboardEvent.code (Digit1 / Numpad1). Enter and Space, RemNote's keys for
+ * Reveal Answer, still reveal without a choice; other keys do nothing.
  */
 function useNumberKeys(piles: number, active: boolean, choose: (pile: number) => void) {
   const plugin = usePlugin();
@@ -64,11 +70,20 @@ function useNumberKeys(piles: number, active: boolean, choose: (pile: number) =>
     plugin.event.addListener(AppEvents.StealKeyEvent, PLUGIN_ID, onSteal);
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
-      if (pick(e.key)) e.preventDefault();
+      const digit = /^(?:Digit|Numpad)([1-9])$/.exec(e.code)?.[1] ?? e.key;
+      if (pick(digit)) {
+        e.preventDefault();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        void plugin.queue.showAnswer();
+      }
     };
     window.addEventListener('keydown', onKey);
+    // RemNote focuses its queue element when it loads the card; take the focus after it.
+    const refocus = [80, 400].map((ms) => setTimeout(() => window.focus(), ms));
 
     return () => {
+      refocus.forEach(clearTimeout);
       window.removeEventListener('keydown', onKey);
       plugin.event.removeListener(AppEvents.StealKeyEvent, PLUGIN_ID, onSteal);
       void plugin.app.releaseKeys(keys).catch(() => {});
