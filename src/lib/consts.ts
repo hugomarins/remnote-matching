@@ -18,6 +18,9 @@ export const SORTING_ITEM_NAME = 'Sorting Item';
  */
 export const CARD_CLUSTER_POWERUP = 'cc';
 
+/** The manifest id: RemNote keys a plugin's iframes and stolen keys by it. */
+export const PLUGIN_ID = 'matching-cards';
+
 export const MATCHING_WIDGET = 'matching_queue';
 export const SORTING_WIDGET = 'sorting_queue';
 

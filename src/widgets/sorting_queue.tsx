@@ -1,8 +1,8 @@
-import { QueueInteractionScore, renderWidget, usePlugin } from '@remnote/plugin-sdk';
+import { AppEvents, QueueInteractionScore, renderWidget, usePlugin } from '@remnote/plugin-sdk';
 import React, { useEffect, useRef, useState } from 'react';
 import '../style.css';
 import { ExerciseHeader } from '../components/ExerciseHeader';
-import { SORTING_WIDGET } from '../lib/consts';
+import { PLUGIN_ID, SORTING_WIDGET } from '../lib/consts';
 import { useCurrentCard } from '../lib/current_card';
 import { useReportHeight } from '../lib/frame_height';
 import { t } from '../lib/i18n';
@@ -12,7 +12,8 @@ import { useSuggestedScore } from '../lib/suggestion';
 /**
  * Drawn on the card of every item of a sorting exercise, Rise style: the item
  * in a card at the top, the piles as boxes below. Drag the item onto a pile
- * (pointer events: mouse, pen and touch alike) or tap a pile. That reveals
+ * (pointer events: mouse, pen and touch alike), tap a pile or press its
+ * number (1 for the first, see useNumberKeys). That reveals
  * the answer, so RemNote's own rating buttons appear, the suggested one (Good
  * if right, Again if not) highlighted and applied by Enter (lib/suggestion.ts).
  * Each item keeps its own schedule.
@@ -24,6 +25,55 @@ interface View {
   itemHtml: string;
   pileHtml: string[];
   answer: number;
+}
+
+/** Number keys choose a pile: 1 the first, … 9 the ninth. */
+const MAX_KEYED_PILES = 9;
+
+/**
+ * Until the item is answered, the keys 1…n (n piles) choose a pile.
+ *
+ * Before the reveal the keyboard is usually RemNote's (its queue element has
+ * the focus), and there any key reveals the answer. app.stealKeys keeps those
+ * keys from it (read in the 1.29 bundle, 2026-11-04): GlobalStealKeySingleton
+ * listens to keydown on the host document in the capture phase, and for a
+ * stolen key calls preventDefault and stopPropagation and emits StealKeyEvent
+ * with the plugin id as the listener key and `{ key }` as data. The keys are
+ * stolen app-wide, so they are released as soon as the item is answered (then
+ * 1–4 are RemNote's rating keys again) or the widget goes away. When the
+ * focus is in this frame instead, the host never sees the key: a keydown
+ * listener here covers that case.
+ */
+function useNumberKeys(piles: number, active: boolean, choose: (pile: number) => void) {
+  const plugin = usePlugin();
+  const chooseRef = useRef(choose);
+  chooseRef.current = choose;
+
+  useEffect(() => {
+    if (!active || piles < 1) return;
+    const keys = Array.from({ length: Math.min(piles, MAX_KEYED_PILES) }, (_, i) => String(i + 1));
+    const pick = (key: unknown) => {
+      const i = keys.indexOf(String(key));
+      if (i < 0) return false;
+      chooseRef.current(i);
+      return true;
+    };
+
+    void plugin.app.stealKeys(keys).catch(() => {});
+    const onSteal = (e: any) => void pick(e?.key);
+    plugin.event.addListener(AppEvents.StealKeyEvent, PLUGIN_ID, onSteal);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (pick(e.key)) e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      plugin.event.removeListener(AppEvents.StealKeyEvent, PLUGIN_ID, onSteal);
+      void plugin.app.releaseKeys(keys).catch(() => {});
+    };
+  }, [piles, active]);
 }
 
 function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) {
@@ -52,7 +102,6 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
     view && chosen !== null ? (chosen === view.answer ? QueueInteractionScore.GOOD : QueueInteractionScore.AGAIN) : undefined
   );
 
-  if (!view) return null;
   const done = chosen !== null || revealed;
 
   const answer = async (pile: number) => {
@@ -60,6 +109,10 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
     setChosen(pile);
     await plugin.queue.showAnswer();
   };
+
+  useNumberKeys(view?.pileHtml.length ?? 0, !!view && !done, (pile) => void answer(pile));
+
+  if (!view) return null;
 
   // Every element under the pointer: the dragged card itself is the topmost one.
   const pileAt = (x: number, y: number): number | null => {
@@ -115,6 +168,7 @@ function SortingItem({ remId, revealed }: { remId: string; revealed: boolean }) 
           const state = !done ? (drag?.over === i ? 'over' : '') : i === view.answer ? 'ok' : i === chosen ? 'ko' : 'dim';
           return (
             <button key={i} data-pile={i} className={`pile ${state}`} onClick={() => answer(i)}>
+              {!done && i < MAX_KEYED_PILES && <kbd className="pile-key">{i + 1}</kbd>}
               <span dangerouslySetInnerHTML={{ __html: html }} />
             </button>
           );

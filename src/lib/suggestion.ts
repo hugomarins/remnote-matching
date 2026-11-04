@@ -1,5 +1,6 @@
 import { QueueInteractionScore, RNPlugin, usePlugin, WidgetLocation } from '@remnote/plugin-sdk';
 import { useEffect } from 'react';
+import { PLUGIN_ID } from './consts';
 
 /**
  * The suggested rating, as RemNote shows it for a Type in Answer card: the
@@ -32,7 +33,6 @@ import { useEffect } from 'react';
  * the widget still shows the card it rated, so it can never rate the next one.
  */
 
-const PLUGIN_ID = 'matching-cards';
 const KEY = 'matching-cards.suggested-score';
 
 /** RemNote's rating keys: 1 Forgot, 2 Hard, 3 Good, 4 Easy. */

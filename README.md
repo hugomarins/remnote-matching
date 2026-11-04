@@ -52,7 +52,7 @@ Put the cursor in the exercise and run **Make Sorting exercise**. The exercise g
 
 **In the queue**, each item is a card above the groups:
 
-- **Drag** the card onto its group, **or tap** the group.
+- **Drag** the card onto its group, **or tap** the group, **or press its number** (`1` for the first group, `2` for the second, …, up to `9`). Until you choose, those keys are the plugin's: they no longer reveal the answer.
 - The right group turns green (and your choice red, if it was wrong). The card is revealed and a rating is suggested: **Good** if right, **Forgot** if not.
 
 ## Rating
